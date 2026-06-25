@@ -66,6 +66,8 @@
   .btn-icon{padding:5px 8px;font-size:12px;color:var(--ink-soft);border-color:transparent;background:transparent}
   .btn-icon:hover{background:var(--line-soft);color:var(--ink)}
   .btn-danger:hover{background:#fdecec;color:#b3261e}
+  .btn-olx{background:var(--accent);color:#fff;border-color:var(--accent);padding:8px 16px;font-weight:600}
+  .btn-olx:hover{background:#a3380a;border-color:#a3380a}
 
   /* Layout */
   main{padding:28px 0 80px}
@@ -251,6 +253,7 @@
       <button class="btn" id="importBtn">Import .txt</button>
       <input type="file" id="fileInput" accept=".txt,text/plain" style="display:none">
       <button class="btn-primary" id="downloadBtn">Download .txt</button>
+      <button class="btn btn-olx" id="olxExport" type="button" title="Export an edX course archive (.tar.gz)" style="display:none">Export to edX</button>
     </div>
   </div>
 </header>
@@ -1243,6 +1246,148 @@ function bindMeta(){document.querySelectorAll('[data-meta]').forEach(i=>i.value=
 // Warn before leaving with unsaved (un-exported) changes.
 window.addEventListener('beforeunload',e=>{ if(dirty){ e.preventDefault(); e.returnValue=""; } });
 
+/* ---------- OLX export (hidden: add #olx to the URL) ------------------ */
+// Converts the current module into an edX course export tarball (.tar.gz)
+// entirely in the browser. The exported text is driven by the model, not the
+// preview DOM. Assets (images, .srt) are referenced, not bundled (see toast).
+function xmlEsc(s){return (s==null?"":(""+s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function xmlText(s){return (s==null?"":(""+s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function idSan(s,fb){const t=(s==null?"":(""+s)).trim().replace(/[^A-Za-z0-9_.\-]+/g,'_').replace(/^[_.]+|_+$/g,'');return t||fb;}
+
+// Minimal markdown → HTML for TEXT bodies / problem prose. Matches the author
+// hints: *bold*, _italic_, [text](url), [[image: file | alt]], - bullets.
+function mdInline(s){
+  s=xmlText(s);
+  s=s.replace(/\[\[image:\s*([^\|\]]+?)(?:\s*\|\s*([^\]]*))?\]\]/g,(m,f,alt)=>'<img src="/static/'+xmlEsc(f.trim())+'" alt="'+xmlEsc((alt||'').trim())+'"/>');
+  s=s.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g,(m,t,u)=>'<a href="'+xmlEsc(u)+'">'+t+'</a>');
+  s=s.replace(/\*([^*\n]+)\*/g,'<strong>$1</strong>');
+  s=s.replace(/_([^_\n]+)_/g,'<em>$1</em>');
+  return s;
+}
+function mdToHtml(body){
+  const lines=(body||"").split("\n"); const out=[]; let list=null,para=[];
+  const closeList=()=>{ if(list){out.push('</'+list+'>');list=null;} };
+  const flushPara=()=>{ if(para.length){out.push('<p>'+para.map(mdInline).join('<br/>')+'</p>');para=[];} };
+  for(const ln of lines){
+    const t=ln.trim();
+    if(t===""){ flushPara(); closeList(); continue; }
+    const ul=t.match(/^[-*]\s+(.*)$/), ol=t.match(/^\d+\.\s+(.*)$/);
+    if(ul){ flushPara(); if(list!=='ul'){closeList();out.push('<ul>');list='ul';} out.push('<li>'+mdInline(ul[1])+'</li>'); continue; }
+    if(ol){ flushPara(); if(list!=='ol'){closeList();out.push('<ol>');list='ol';} out.push('<li>'+mdInline(ol[1])+'</li>'); continue; }
+    closeList(); para.push(ln.trimEnd());
+  }
+  flushPara(); closeList();
+  return out.join("\n");
+}
+function olxProblem(c){
+  const opts=c.options||[];
+  let resp="";
+  if(c.ptype==="multiple_choice")
+    resp='<multiplechoiceresponse><choicegroup type="MultipleChoice">'+opts.map(o=>'<choice correct="'+(o.correct?'true':'false')+'">'+xmlText(o.t)+'</choice>').join('')+'</choicegroup></multiplechoiceresponse>';
+  else if(c.ptype==="checkboxes")
+    resp='<choiceresponse><checkboxgroup>'+opts.map(o=>'<choice correct="'+(o.correct?'true':'false')+'">'+xmlText(o.t)+'</choice>').join('')+'</checkboxgroup></choiceresponse>';
+  else if(c.ptype==="dropdown")
+    resp='<optionresponse><optioninput>'+opts.map(o=>'<option correct="'+(o.correct?'True':'False')+'">'+xmlText(o.t)+'</option>').join('')+'</optioninput></optionresponse>';
+  else if(c.ptype==="numerical"){
+    const tol=(c.tolerance||"").replace(/^[±+]/,'').trim();
+    resp='<numericalresponse answer="'+xmlEsc((c.answer||"0").trim())+'">'+(tol?'<responseparam type="tolerance" default="'+xmlEsc(tol)+'"/>':'')+'<formulaequationinput/></numericalresponse>';
+  } else
+    resp='<stringresponse answer="'+xmlEsc((c.answer||"").trim())+'" type="ci"><textline size="40"/></stringresponse>';
+  const q=mdToHtml(c.question||"");
+  const sol=(c.explanation||"").trim()?'<solution><div class="detailed-solution"><p>Explanation</p>'+mdToHtml(c.explanation)+'</div></solution>':'';
+  const hint=(c.hint||"").trim()?'<demandhint><hint>'+xmlText(c.hint)+'</hint></demandhint>':'';
+  return '<problem display_name="'+xmlEsc(c.title||"Problem")+'">\n'+q+'\n'+resp+'\n'+sol+hint+'\n</problem>\n';
+}
+function olxVideo(c){
+  const url=(c.url||"").trim();
+  const yt=url.match(/(?:youtu\.be\/|[?&]v=|embed\/)([\w-]{11})/);
+  let a='display_name="'+xmlEsc(c.title||"Video")+'" download_video="true"';
+  if(yt) a+=' youtube_id_1_0="'+xmlEsc(yt[1])+'"';
+  else if(url) a+=' html5_sources="'+xmlEsc(JSON.stringify([url]))+'"';
+  if((c.transcript||"").trim()) a+=' transcripts="'+xmlEsc(JSON.stringify({en:c.transcript.trim()}))+'"';
+  return '<video '+a+'/>\n';
+}
+function buildOlx(st){
+  const meta=st.meta;
+  const org=idSan(meta.ORG,"ORG"), course=idSan(meta.COURSE_ID,"course"), run=idSan(meta.RUN,"run");
+  const root=course;                       // wrapper dir so Studio's import finds course.xml
+  const files={}; const P=(p,c)=>files[root+"/"+p]=c;
+  const n={ch:0,seq:0,vt:0,h:0,v:0,p:0};
+  const chRefs=[];
+  st.chapters.forEach(ch=>{
+    const cu="chapter"+(++n.ch); chRefs.push(cu); const seqRefs=[];
+    ch.seqs.forEach(s=>{
+      const su="seq"+(++n.seq); seqRefs.push(su); const vtRefs=[];
+      s.units.forEach(u=>{
+        const vu="vert"+(++n.vt); vtRefs.push(vu); const kids=[];
+        u.comps.forEach(c=>{
+          if(c.kind==="TEXT"){
+            const id="html"+(++n.h);
+            P("html/"+id+".html",(c.title?('<h3>'+xmlText(c.title)+'</h3>\n'):'')+mdToHtml(c.body)+"\n");
+            P("html/"+id+".xml",'<html filename="'+id+'" display_name="'+xmlEsc(c.title||"Text")+'"/>\n');
+            kids.push(["html",id]);
+          } else if(c.kind==="VIDEO"){
+            const id="video"+(++n.v); P("video/"+id+".xml",olxVideo(c)); kids.push(["video",id]);
+          } else if(c.kind==="PROBLEM"){
+            const id="problem"+(++n.p); P("problem/"+id+".xml",olxProblem(c)); kids.push(["problem",id]);
+          }
+        });
+        P("vertical/"+vu+".xml",'<vertical display_name="'+xmlEsc(u.title||"Unit")+'">\n'+kids.map(k=>'  <'+k[0]+' url_name="'+k[1]+'"/>').join("\n")+"\n</vertical>\n");
+      });
+      P("sequential/"+su+".xml",'<sequential display_name="'+xmlEsc(s.title||"Subsection")+'">\n'+vtRefs.map(v=>'  <vertical url_name="'+v+'"/>').join("\n")+"\n</sequential>\n");
+    });
+    P("chapter/"+cu+".xml",'<chapter display_name="'+xmlEsc(ch.name)+'">\n'+seqRefs.map(s=>'  <sequential url_name="'+s+'"/>').join("\n")+"\n</chapter>\n");
+  });
+  P("course/"+run+".xml",'<course display_name="'+xmlEsc(meta.DISPLAY_NAME||"Course")+'">\n'+chRefs.map(c=>'  <chapter url_name="'+c+'"/>').join("\n")+"\n</course>\n");
+  P("course.xml",'<course url_name="'+run+'" org="'+org+'" course="'+course+'"/>\n');
+  P("policies/"+run+"/policy.json",JSON.stringify({["course/"+run]:{display_name:meta.DISPLAY_NAME||"Course",start:"2020-01-01T00:00:00Z",language:"en"}},null,2));
+  P("policies/"+run+"/grading_policy.json",JSON.stringify({GRADER:[{type:"Homework",min_count:1,drop_count:0,short_label:"HW",weight:1.0}],GRADE_CUTOFFS:{Pass:0.5}},null,2));
+  return {files,name:course+"_"+run+".tar.gz"};
+}
+function tarball(files){
+  const enc=new TextEncoder(); const blocks=[];
+  const octal=(num,len)=>num.toString(8).padStart(len-1,"0")+"\0";
+  Object.keys(files).sort().forEach(path=>{
+    const data=typeof files[path]==="string"?enc.encode(files[path]):files[path];
+    const h=new Uint8Array(512);
+    const put=(str,off,len)=>{const b=enc.encode(str);for(let i=0;i<b.length&&i<len;i++)h[off+i]=b[i];};
+    let name=path, prefix="";
+    if(name.length>100){const idx=name.lastIndexOf("/",100);if(idx>0){prefix=name.slice(0,idx);name=name.slice(idx+1);}}
+    put(name,0,100); put("0000644",100,7); put("0000000",108,7); put("0000000",116,7);
+    put(octal(data.length,12),124,12); put(octal(0,12),136,12);
+    for(let i=148;i<156;i++)h[i]=0x20;            // checksum field = spaces
+    h[156]=0x30;                                   // typeflag '0' (file)
+    put("ustar\0",257,6); h[263]=0x30; h[264]=0x30; put(prefix,345,155);
+    let sum=0; for(let i=0;i<512;i++)sum+=h[i];
+    put(octal(sum,7),148,7); h[155]=0x20;
+    blocks.push(h,data);
+    const pad=(512-(data.length%512))%512; if(pad)blocks.push(new Uint8Array(pad));
+  });
+  blocks.push(new Uint8Array(1024));               // end-of-archive
+  const total=blocks.reduce((a,b)=>a+b.length,0), out=new Uint8Array(total); let off=0;
+  blocks.forEach(b=>{out.set(b,off);off+=b.length;});
+  return out;
+}
+async function gzipBytes(bytes){
+  if(typeof CompressionStream!=="function") return null;
+  const cs=new CompressionStream("gzip"); const w=cs.writable.getWriter(); w.write(bytes); w.close();
+  return new Uint8Array(await new Response(cs.readable).arrayBuffer());
+}
+async function exportOlx(){
+  serialize();                                     // sync meta from DOM into state
+  const issues=validate();
+  const {files,name}=buildOlx(state);
+  const tar=tarball(files);
+  let blob, fname=name;
+  const gz=await gzipBytes(tar);
+  if(gz){ blob=new Blob([gz],{type:"application/gzip"}); }
+  else { blob=new Blob([tar],{type:"application/x-tar"}); fname=name.replace(/\.gz$/,""); toast("This browser can't gzip — downloaded a .tar; gzip it before importing."); }
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=fname; a.click();
+  const warn=issues.length?(" · "+issues.length+" validation issue"+(issues.length>1?"s":"")+" — open preview"):"";
+  toast("Exported "+fname+" · remember to upload images/transcripts in Studio"+warn);
+}
+window.__olx=exportOlx;
+
 /* ---------- Optional in-page self-test -------------------------------- */
 // Runs the round-trip / invariant checks against the live code. Opt-in only:
 // load the page with #selftest in the URL, or call __selftest() in the console.
@@ -1307,6 +1452,11 @@ window.__selftest=runSelfTest;
 render();
 syncOutlineLabel();
 appReady=true;   // edits from here on mark the document dirty
+
+// Hidden edX export: revealed only when the URL contains #olx (or ?olx).
+document.getElementById('olxExport').onclick=exportOlx;
+function syncOlx(){ if((location.hash+location.search).indexOf('olx')>=0) document.getElementById('olxExport').style.display=''; }
+window.addEventListener('hashchange',syncOlx); syncOlx();
 
 if((location.hash+location.search).indexOf('selftest')>=0) runSelfTest();
 </script>
