@@ -334,13 +334,17 @@ function render(){
 // Move focus to an element tagged with data-k, caret at end of any text it holds.
 function focusKey(k){
   const e=document.querySelector('[data-k="'+(window.CSS&&CSS.escape?CSS.escape(k):k)+'"]');
-  if(e){e.focus();if(typeof e.value==="string"){const v=e.value;e.value="";e.value=v;}}
+  if(e){e.focus();if(typeof e.value==="string"){const v=e.value;e.value="";e.value=v;}return true}
+  return false;
 }
+// Focus the first element matching a selector (used to land somewhere sensible
+// after a delete rebuilds the tree). Returns whether it found a target.
+function focusSel(sel){const e=document.querySelector(sel);if(e){e.focus();return true}return false}
 
 function el(tag,cls,html){const e=document.createElement(tag);if(cls)e.className=cls;if(html!=null)e.innerHTML=html;return e}
 
 function renderChapter(ch){
-  const wrap=el('div','chapter');
+  const wrap=el('div','chapter'); wrap.dataset.chapter=ch.kind;
   const head=el('div','chapter-head');
   head.innerHTML=`<span class="chapter-title">${ch.name}</span>
     <span class="chapter-kind">Chapter</span>
@@ -380,7 +384,7 @@ function renderChapter(ch){
 }
 
 function renderSeq(s,ch){
-  const wrap=el('div','seq');
+  const wrap=el('div','seq'); wrap.dataset.seq=s.id;
   const head=el('div','seq-head');
   const prefix=el('span','seq-prefix','subsection');
   const inp=document.createElement('input');
@@ -391,7 +395,7 @@ function renderSeq(s,ch){
   const removable = !s.fixed && ch.seqs.indexOf(s)>0;
   if(removable){
     const del=el('button','btn-icon btn-danger','✕ remove');
-    del.onclick=()=>{ch.seqs=ch.seqs.filter(x=>x!==s);render()};
+    del.onclick=()=>{ch.seqs=ch.seqs.filter(x=>x!==s);afterRender=()=>focusSel('[data-chapter="'+ch.kind+'"] .btn-add');render()};
     head.appendChild(el('span','row-actions')).appendChild(del);
   }
   wrap.appendChild(head);
@@ -408,7 +412,10 @@ function renderSeq(s,ch){
       // and the suffix continues from the highest existing stem so deletions
       // don't create collisions like two "L1.2" units.
       const letter=ch.kind==="lectures"?"L":"R";
-      const lecNum=numFromTitle(s.title,/(\d+)/)||seqNumber(s,ch);
+      const word=ch.kind==="lectures"?"Lecture":"Recitation";
+      // Anchor to the "Lecture N"/"Recitation N" number so a stray digit in a
+      // renamed title (e.g. "2024 Macro Review") can't poison the stem.
+      const lecNum=numFromTitle(s.title,new RegExp(word+"\\s+(\\d+)"))||seqNumber(s,ch);
       const suffix=nextNum(s.units,u=>u.title,new RegExp("^"+letter+lecNum+"\\.(\\d+)"));
       const stem=letter+lecNum+"."+suffix;
       const comps = ch.kind==="lectures" ? [comp("TEXT"),comp("VIDEO"),comp("PROBLEM")] : [comp("VIDEO")];
@@ -424,8 +431,9 @@ function renderSeq(s,ch){
     add.style.cssText="border:1px dashed var(--line);border-radius:7px;width:100%;margin-top:4px";
     add.onclick=()=>{
       const partNum=nextNum(s.units,u=>u.title,/Part\s+(\d+)/);
+      const aNum=numFromTitle(s.title,/Assignment\s+(\d+)/)||seqNumber(s,ch);
       const idx=s.units.length-1;
-      s.units.splice(idx,0,unit(s.title+": Part "+partNum,false,[comp("PROBLEM")]));
+      s.units.splice(idx,0,unit("Assignment "+aNum+": Part "+partNum,false,[comp("PROBLEM")]));
       render();
     };
     body.appendChild(add);
@@ -438,7 +446,7 @@ function numFromTitle(title,re){const m=(title||"").match(re);return m?+m[1]:0}
 function nextNum(items,getTitle,re){let mx=0;items.forEach(it=>{const v=numFromTitle(getTitle(it),re);if(v>mx)mx=v});return mx+1}
 
 function renderUnit(u,s,ch){
-  const wrap=el('div','unit');
+  const wrap=el('div','unit'); wrap.dataset.unit=u.id;
   const head=el('div','unit-head');
   head.appendChild(el('span','unit-badge'+(u.fixed?' fixed':''),u.fixed?'fixed unit':'unit'));
   const inp=document.createElement('input');
@@ -447,8 +455,8 @@ function renderUnit(u,s,ch){
   head.appendChild(inp);
   if(!u.fixed){
     const del=el('button','btn-icon btn-danger','✕');
-    del.title="Remove unit";
-    del.onclick=()=>{s.units=s.units.filter(x=>x!==u);render()};
+    del.title="Remove unit"; del.setAttribute("aria-label","Remove unit");
+    del.onclick=()=>{s.units=s.units.filter(x=>x!==u);afterRender=()=>{focusSel('[data-seq="'+s.id+'"] > .seq-body > .btn-ghost')||focusSel('[data-seq="'+s.id+'"] .seq-head input')};render()};
     const ra=el('span','row-actions'); ra.appendChild(del); head.appendChild(ra);
   }
   wrap.appendChild(head);
@@ -480,7 +488,8 @@ function renderComp(c,u){
   head.innerHTML=`<span class="comp-diamond">◆</span><span class="comp-kind">${c.kind}</span>`;
   if(!u.fixed || u.comps.length>1){
     const del=el('button','btn-icon btn-danger','✕');
-    del.onclick=()=>{u.comps=u.comps.filter(x=>x!==c);render()};
+    del.title="Remove component"; del.setAttribute("aria-label","Remove component");
+    del.onclick=()=>{u.comps=u.comps.filter(x=>x!==c);afterRender=()=>{focusSel('[data-unit="'+u.id+'"] .add-row button')||focusSel('[data-unit="'+u.id+'"] input,[data-unit="'+u.id+'"] textarea')};render()};
     const ra=el('span','row-actions');ra.appendChild(del);head.appendChild(ra);
   }
   wrap.appendChild(head);
@@ -529,7 +538,9 @@ function renderComp(c,u){
 
 function renderOptions(c){
   const f=el('div','field');
-  f.appendChild(el('label','lbl',null)).textContent="Options — tap the marker to set the correct answer"+(c.ptype==="checkboxes"?"s":"");
+  const cap="Options — tap the marker to set the correct answer"+(c.ptype==="checkboxes"?"s":"");
+  f.setAttribute('role','group'); f.setAttribute('aria-label',cap);
+  const capEl=el('div','lbl'); capEl.textContent=cap; f.appendChild(capEl);
   const list=el('div','opts');
   const multi = c.ptype==="checkboxes";
   c.options.forEach((o,i)=>{
@@ -548,7 +559,7 @@ function renderOptions(c){
     if(c.options.length>2){
       const del=el('button','btn-icon btn-danger','✕');
       del.setAttribute("aria-label","Remove option "+(i+1));
-      del.onclick=()=>{c.options.splice(i,1);render()};
+      del.onclick=()=>{c.options.splice(i,1);afterRender=()=>{focusKey(c.id+":opt:"+Math.min(i,c.options.length-1))||focusSel('[data-comp="'+c.id+'"] .opt-add')};render()};
       row.appendChild(del);
     }
     list.appendChild(row);
@@ -580,6 +591,20 @@ function fieldText(label,val,onset,area=false,ph="",mono=false,key=null){
 function bar(ch){return "=".repeat(80)}
 function dash(){return "-".repeat(80)}
 
+// Multi-line prose fields (BODY/QUESTION/EXPLANATION) are emitted as a fenced
+// block: a bare "KEY:" line, the content, then a "<<<" terminator. Any content
+// line that could be mistaken for a fence or a structural marker is escaped
+// with a leading backslash; the parser strips exactly one backslash back off.
+// This lets a block contain literally anything — ===, ---, >>>, KEY:, <<< — and
+// still round-trip byte-for-byte.
+function escBlockLine(l){ return (/^\\/.test(l) || /^>>>/.test(l) || l.trim()==="<<<") ? "\\"+l : l; }
+function unescBlockLine(l){ return /^\\/.test(l) ? l.slice(1) : l; }
+function pushBlock(L,key,val){
+  L.push(key+":");
+  if(val) val.split("\n").forEach(line=>L.push(escBlockLine(line)));
+  L.push("<<<");
+}
+
 function serialize(){
   // bind meta inputs
   document.querySelectorAll('[data-meta]').forEach(i=>state.meta[i.dataset.meta]=i.value);
@@ -603,9 +628,7 @@ function serialize(){
           L.push(">>> COMPONENT: "+c.kind);
           if(c.kind==="TEXT"){
             L.push("TITLE: "+(c.title||""));
-            // BODY is fenced with a trailing <<< so prose can contain anything —
-            // lines like "NOTE: ..." or rows of ===/--- no longer truncate it.
-            L.push("BODY:"); if(c.body)L.push(c.body); L.push("<<<");
+            pushBlock(L,"BODY",c.body);
           }
           if(c.kind==="VIDEO"){
             L.push("TITLE: "+(c.title||""));
@@ -616,7 +639,7 @@ function serialize(){
           if(c.kind==="PROBLEM"){
             L.push("TITLE: "+(c.title||""));
             L.push("PROBLEM_TYPE: "+c.ptype);
-            L.push("QUESTION: "+(c.question||""));
+            pushBlock(L,"QUESTION",c.question);
             if(["multiple_choice","checkboxes","dropdown"].includes(c.ptype)){
               L.push("OPTIONS:");
               c.options.forEach(o=>{
@@ -627,7 +650,7 @@ function serialize(){
               L.push("ANSWER: "+(c.answer||""));
               if(c.ptype==="numerical")L.push("TOLERANCE: "+(c.tolerance||""));
             }
-            L.push("EXPLANATION: "+(c.explanation||""));
+            pushBlock(L,"EXPLANATION",c.explanation);
             L.push("HINT: "+(c.hint||""));
           }
           L.push("");
@@ -641,15 +664,19 @@ function serialize(){
 
 /* ---------- Preview with light syntax tint --------------------------- */
 function renderPreview(){
-  const txt=serialize();
-  const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  const html=txt.split('\n').map(line=>{
-    if(/^={5,}$/.test(line)||/^-{5,}$/.test(line)||line==="<<<")return '<span class="d">'+esc(line)+'</span>';
-    if(/^(CHAPTER:|SEQUENTIAL:|>>> UNIT:|>>> COMPONENT:|MODULE$|END OF MODULE$|MODULE AUTHORING)/.test(line))return '<span class="h">'+esc(line)+'</span>';
-    if(/^[A-Z_]+:/.test(line))return '<span class="k">'+esc(line.split(':')[0])+':</span>'+esc(line.slice(line.indexOf(':')+1));
-    return esc(line);
-  }).join('\n');
-  document.getElementById('preview').innerHTML=html;
+  const txt=serialize();   // also syncs meta from the DOM into state (for validation)
+  // The expensive syntax-highlight + innerHTML is skipped while the panel is
+  // collapsed; it's rebuilt when the panel is revealed (see setPreview).
+  if(!document.getElementById('grid').classList.contains('preview-hidden')){
+    const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    const html=txt.split('\n').map(line=>{
+      if(/^={5,}$/.test(line)||/^-{5,}$/.test(line)||line==="<<<")return '<span class="d">'+esc(line)+'</span>';
+      if(/^(CHAPTER:|SEQUENTIAL:|>>> UNIT:|>>> COMPONENT:|MODULE$|END OF MODULE$|MODULE AUTHORING)/.test(line))return '<span class="h">'+esc(line)+'</span>';
+      if(/^[A-Z_]+:/.test(line))return '<span class="k">'+esc(line.split(':')[0])+':</span>'+esc(line.slice(line.indexOf(':')+1));
+      return esc(line);
+    }).join('\n');
+    document.getElementById('preview').innerHTML=html;
+  }
   renderIssues();
 }
 
@@ -680,18 +707,33 @@ function validate(){
   return issues;
 }
 
+let lastIssueCount=0;
+// Keep the header toggle in sync: show the open/closed label, and when the
+// panel is collapsed surface the issue count so problems aren't hidden.
+function syncToggleLabel(){
+  const grid=document.getElementById('grid'), b=document.getElementById('previewToggle');
+  if(!grid||!b)return;
+  const shown=!grid.classList.contains('preview-hidden');
+  const suffix=(!shown&&lastIssueCount)?(" ("+lastIssueCount+" issue"+(lastIssueCount>1?"s":"")+")"):"";
+  b.textContent=(shown?"Hide preview":"Show preview")+suffix;
+  b.setAttribute('aria-pressed',shown?"true":"false");
+}
+
 function renderIssues(){
   const box=document.getElementById('issues');
   const issues=validate();
+  lastIssueCount=issues.length;
   if(!issues.length){
     box.hidden=false;
     box.innerHTML='<span class="ok">✓ No issues — ready to download.</span>';
+    syncToggleLabel();
     return;
   }
   const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   box.hidden=false;
   box.innerHTML='<span class="ihead">'+issues.length+' issue'+(issues.length>1?'s':'')+' to fix before handing off</span>'+
     issues.map(it=>'<div class="irow"><span class="where">'+esc(it.where)+'</span><span>'+esc(it.msg)+'</span></div>').join('');
+  syncToggleLabel();
 }
 
 /* ---------- Deserialize: parse template text back into state --------- */
@@ -713,8 +755,8 @@ const FIXED_UNIT_TITLES = new Set([
 
 function parseTemplate(text){
   const lines = text.replace(/\r\n/g,"\n").split("\n");
-  const isEq = l=>/^={5,}$/.test(l.trim());
-  const isDash = l=>/^-{5,}$/.test(l.trim());
+  const isEq = l=>/^={5,}$/.test((l||"").trim());
+  const isDash = l=>/^-{5,}$/.test((l||"").trim());
 
   const meta = {DISPLAY_NAME:"",COURSE_ID:"",ORG:"",RUN:"",SHORT_DESCRIPTION:""};
   const chapters = []; // {name, seqs:[{title, units:[{title, comps:[...]}]}]}
@@ -778,34 +820,37 @@ function parseTemplate(text){
     }
     // component fields
     if(curComp){
-      // BODY is multi-line. Consume it all here (advancing i) so a body line
-      // that looks like a banner/field can't be mistaken for structure.
-      if(/^BODY:/.test(line)){
-        const collected=[]; const rest=line.replace(/^BODY:\s?/,""); if(rest)collected.push(rest);
-        // Prefer the fenced form: take everything verbatim up to a "<<<" line,
-        // but only if that fence appears before the next hard structural marker.
+      // BODY / QUESTION / EXPLANATION are multi-line "block" fields: a bare
+      // "KEY:" line, content, then a "<<<" fence. Consume the whole block here
+      // (advancing i) so its content can't be mistaken for structure. A "KEY:"
+      // line WITH inline text is treated as a legacy single-line field below.
+      const blk=line.match(/^(BODY|QUESTION|EXPLANATION):\s?(.*)$/);
+      if(blk && blk[2].trim()===""){
         let fenceAt=-1;
         for(let j=i+1;j<lines.length;j++){
           const lj=lines[j];
           if(lj.trim()==="<<<"){fenceAt=j;break;}
-          // Only a real next block ends the search — body prose may itself
-          // contain ===, ---, or a stray >>> that isn't a true marker.
+          // Content lines starting with >>> are escaped by serialize, so only a
+          // real next block (used for legacy unfenced files) ends the search.
           if(/^>>>\s*(UNIT|COMPONENT):/i.test(lj))break;
         }
+        let val;
         if(fenceAt!==-1){
-          for(let k=i+1;k<fenceAt;k++)collected.push(lines[k]);
-          i=fenceAt; // loop's i++ steps past the closing fence
+          const out=[]; for(let k=i+1;k<fenceAt;k++)out.push(unescBlockLine(lines[k]));
+          val=out.join("\n").replace(/\s+$/,""); i=fenceAt; // step past the fence
         } else {
-          // Legacy (unfenced) file: stop at the next field/marker/rule.
-          let k=i+1;
+          // Legacy (unfenced) file: stop at the next field/marker/rule, no unescape.
+          const out=[]; let k=i+1;
           for(;k<lines.length;k++){
             const lk=lines[k];
             if(/^[A-Z_]+:/.test(lk)||/^>>>/.test(lk)||isEq(lk)||isDash(lk))break;
-            collected.push(lk);
+            out.push(lk);
           }
-          i=k-1; // reprocess the stopping line on the next iteration
+          val=out.join("\n").replace(/\s+$/,""); i=k-1; // reprocess the stopping line
         }
-        if(curComp) curComp.body=collected.join("\n").replace(/\s+$/,"");
+        if(blk[1]==="BODY")curComp.body=val;
+        else if(blk[1]==="QUESTION")curComp.question=val;
+        else curComp.explanation=val;
         continue;
       }
       // option lines
@@ -820,6 +865,7 @@ function parseTemplate(text){
       if(f){
         const key=f[1], val=f[2];
         if(key==="TITLE")curComp.title=val;
+        else if(key==="BODY")curComp.body=val;
         else if(key==="VIDEO_URL")curComp.url=val;
         else if(key==="TRANSCRIPT_FILE")curComp.transcript=val;
         else if(key==="DURATION")curComp.duration=val;
@@ -892,8 +938,10 @@ function importText(text){
   if(!parsed.chapters.length && !parsed.meta.DISPLAY_NAME){
     toast("No module structure found in that file."); return;
   }
-  state = stateFromParsed(parsed);
-  bindMeta(); render();
+  try{
+    state = stateFromParsed(parsed);
+    bindMeta(); render();
+  }catch(err){ toast("Couldn't rebuild the module from that file."); return; }
   toast("Imported — resume editing where you left off.");
 }
 
@@ -906,10 +954,25 @@ function download(){
   toast("Downloaded "+name);
 }
 function copy(){
-  navigator.clipboard.writeText(serialize()).then(()=>{
+  const txt=serialize();
+  const ok=()=>{
     const b=document.getElementById('copyBtn');b.textContent="Copied ✓";b.classList.add('copy-ok');
     setTimeout(()=>{b.textContent="Copy";b.classList.remove('copy-ok')},1400);
-  });
+  };
+  // navigator.clipboard is undefined on plain-HTTP / file:// in some browsers,
+  // and can reject without permission — fall back to a hidden-textarea copy.
+  const fallback=()=>{
+    try{
+      const ta=document.createElement('textarea');ta.value=txt;
+      ta.style.cssText="position:fixed;top:-9999px;left:-9999px";
+      document.body.appendChild(ta);ta.focus();ta.select();
+      const done=document.execCommand('copy');document.body.removeChild(ta);
+      done?ok():toast("Couldn't copy automatically — open the preview and copy manually.");
+    }catch(e){ toast("Couldn't copy automatically — open the preview and copy manually."); }
+  };
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(txt).then(ok).catch(fallback);
+  } else { fallback(); }
 }
 let toastTimer;
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),1900)}
@@ -920,9 +983,8 @@ document.getElementById('copyBtn').onclick=copy;
 // Preview panel is hidden by default and revealed on demand.
 function setPreview(show){
   document.getElementById('grid').classList.toggle('preview-hidden',!show);
-  const b=document.getElementById('previewToggle');
-  b.textContent=show?"Hide preview":"Show preview";
-  b.setAttribute('aria-pressed',show?"true":"false");
+  if(show)renderPreview();   // rebuild the preview that was skipped while hidden
+  syncToggleLabel();
 }
 document.getElementById('previewToggle').onclick=()=>
   setPreview(document.getElementById('grid').classList.contains('preview-hidden'));
