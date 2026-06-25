@@ -142,6 +142,15 @@
   .add-row .btn-ghost{font-size:12.5px;border:1px dashed var(--line);border-radius:7px;flex:1}
   .add-row .btn-ghost:hover{border-color:var(--blue);background:var(--blue-soft)}
 
+  /* Drag-to-reorder */
+  .drag{cursor:grab;color:var(--ink-soft);background:none;border:none;font-family:var(--mono);font-size:13px;line-height:1;padding:2px 4px;border-radius:5px;flex-shrink:0}
+  .drag:hover{background:var(--line-soft);color:var(--ink)}
+  .drag:active{cursor:grabbing}
+  .drag:focus-visible{outline:2px solid var(--blue);outline-offset:1px}
+  .dragging{opacity:.4}
+  .drop-before{box-shadow:inset 0 3px 0 -1px var(--blue)}
+  .drop-after{box-shadow:inset 0 -3px 0 -1px var(--blue)}
+
   /* Preview column */
   .preview-col{position:sticky;top:88px}
   .preview-card{background:var(--ink);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow)}
@@ -341,6 +350,64 @@ function focusKey(k){
 // after a delete rebuilds the tree). Returns whether it found a target.
 function focusSel(sel){const e=document.querySelector(sel);if(e){e.focus();return true}return false}
 
+/* ---------- Drag-and-drop reordering --------------------------------- */
+// Reordering only ever happens within one array (same container), so the
+// locked skeleton can't be broken by dragging across chapters/units.
+let dragCtx=null;
+function isBefore(e,wrap){const r=wrap.getBoundingClientRect();return (e.clientY-r.top) < r.height/2;}
+function clearDropMarks(){document.querySelectorAll('.drop-before,.drop-after').forEach(e=>e.classList.remove('drop-before','drop-after'));}
+function markDrop(wrap,before){clearDropMarks();wrap.classList.add(before?'drop-before':'drop-after');}
+function reorderList(list,moved,target,before){
+  const from=list.indexOf(moved); if(from<0)return;
+  list.splice(from,1);
+  let to=list.indexOf(target); if(to<0){list.splice(from,0,moved);return;}
+  if(!before)to++;
+  list.splice(to,0,moved);
+}
+// Build a drag handle that reorders `model` within `list`. `wrap` is both the
+// drag ghost and the drop target. opts.canDropAt(target) gates valid neighbors
+// (e.g. can't land on a fixed unit); opts.handleSel(model,newIndex) returns a
+// selector to refocus the handle after a keyboard move. Returns the handle node.
+function makeDraggable(wrap,model,list,opts){
+  opts=opts||{};
+  const handle=document.createElement('button');
+  handle.type="button"; handle.className="drag"; handle.textContent="⠿"; handle.draggable=true;
+  handle.title="Drag, or focus and press ↑/↓, to reorder";
+  handle.setAttribute("aria-label","Reorder (drag, or use up and down arrows)");
+  handle.addEventListener('dragstart',e=>{
+    dragCtx={list,model,opts}; wrap.classList.add('dragging');
+    try{e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain','move');
+        if(e.dataTransfer.setDragImage)e.dataTransfer.setDragImage(wrap,12,12);}catch(_){}
+  });
+  handle.addEventListener('dragend',()=>{wrap.classList.remove('dragging');clearDropMarks();dragCtx=null;});
+  handle.addEventListener('keydown',e=>{
+    if(e.key!=="ArrowUp"&&e.key!=="ArrowDown")return;
+    e.preventDefault();
+    const from=list.indexOf(model); if(from<0)return;
+    const dir=e.key==="ArrowDown"?1:-1; let to=from+dir;
+    while(to>=0&&to<list.length&&opts.canDropAt&&!opts.canDropAt(list[to]))to+=dir; // skip locked neighbors
+    if(to<0||to>=list.length)return;
+    list.splice(from,1); list.splice(to,0,model);
+    if(opts.handleSel){const sel=opts.handleSel(model,to); afterRender=()=>focusSel(sel);}
+    render();
+  });
+  wrap.addEventListener('dragover',e=>{
+    if(!dragCtx||dragCtx.list!==list||dragCtx.model===model)return;     // same container only
+    if(opts.canDropAt&&!opts.canDropAt(model))return;
+    e.preventDefault();try{e.dataTransfer.dropEffect='move';}catch(_){}
+    markDrop(wrap,isBefore(e,wrap));
+  });
+  wrap.addEventListener('drop',e=>{
+    if(!dragCtx||dragCtx.list!==list||dragCtx.model===model)return;
+    if(opts.canDropAt&&!opts.canDropAt(model))return;
+    e.preventDefault();
+    reorderList(list,dragCtx.model,model,isBefore(e,wrap));
+    dragCtx=null; render();
+  });
+  return handle;
+}
+const notFixed=t=>!t.fixed;
+
 function el(tag,cls,html){const e=document.createElement(tag);if(cls)e.className=cls;if(html!=null)e.innerHTML=html;return e}
 
 function renderChapter(ch){
@@ -386,6 +453,8 @@ function renderChapter(ch){
 function renderSeq(s,ch){
   const wrap=el('div','seq'); wrap.dataset.seq=s.id;
   const head=el('div','seq-head');
+  if(!s.fixed && ch.seqs.length>1)
+    head.appendChild(makeDraggable(wrap,s,ch.seqs,{canDropAt:notFixed,handleSel:()=>'[data-seq="'+s.id+'"] .drag'}));
   const prefix=el('span','seq-prefix','subsection');
   const inp=document.createElement('input');
   inp.value=s.title; inp.placeholder="Subsection title"; inp.setAttribute("aria-label","Subsection title");
@@ -448,6 +517,8 @@ function nextNum(items,getTitle,re){let mx=0;items.forEach(it=>{const v=numFromT
 function renderUnit(u,s,ch){
   const wrap=el('div','unit'); wrap.dataset.unit=u.id;
   const head=el('div','unit-head');
+  if(!u.fixed && s.units.filter(notFixed).length>1)
+    head.appendChild(makeDraggable(wrap,u,s.units,{canDropAt:notFixed,handleSel:()=>'[data-unit="'+u.id+'"] .drag'}));
   head.appendChild(el('span','unit-badge'+(u.fixed?' fixed':''),u.fixed?'fixed unit':'unit'));
   const inp=document.createElement('input');
   inp.value=u.title; inp.placeholder="Unit title"; inp.setAttribute("aria-label","Unit title");
@@ -486,6 +557,8 @@ function renderComp(c,u){
   const wrap=el('div','comp'); wrap.dataset.comp=c.id;
   const head=el('div','comp-head');
   head.innerHTML=`<span class="comp-diamond">◆</span><span class="comp-kind">${c.kind}</span>`;
+  if(u.comps.length>1)
+    head.insertBefore(makeDraggable(wrap,c,u.comps,{handleSel:()=>'[data-comp="'+c.id+'"] .drag'}),head.firstChild);
   if(!u.fixed || u.comps.length>1){
     const del=el('button','btn-icon btn-danger','✕');
     del.title="Remove component"; del.setAttribute("aria-label","Remove component");
@@ -544,7 +617,9 @@ function renderOptions(c){
   const list=el('div','opts');
   const multi = c.ptype==="checkboxes";
   c.options.forEach((o,i)=>{
-    const row=el('div','opt');
+    const row=el('div','opt'); row.dataset.opt=c.id+":"+i;
+    if(c.options.length>1)
+      row.appendChild(makeDraggable(row,o,c.options,{handleSel:(m,to)=>'[data-opt="'+c.id+':'+to+'"] .drag'}));
     const mk=el('button','marker'+(o.correct?' on':''),markerGlyph(c.ptype,o.correct));
     mk.title="Set correct"; mk.setAttribute("aria-label",(o.correct?"Correct answer — ":"Mark correct — ")+"option "+(i+1)); mk.setAttribute("aria-pressed",o.correct?"true":"false");
     mk.onclick=()=>{
@@ -1042,6 +1117,9 @@ function runSelfTest(){
 
     uid=1; state=seedState();
     check("validation flags a blank skeleton", validate().length>0);
+
+    const lst=[{id:'a'},{id:'b'},{id:'c'}]; reorderList(lst,lst[0],lst[2],false);
+    check("reorder moves an item to after its target", lst.map(x=>x.id).join('')==="bca");
   }catch(err){ check("harness ran without error ("+err.message+")", false); }
   finally{ state=savedState; uid=savedUid; render(); }
 
