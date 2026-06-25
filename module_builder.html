@@ -315,10 +315,23 @@ function findSeq(id){
 /* ---------- Render --------------------------------------------------- */
 const chaptersEl = document.getElementById('chapters');
 
+let domId=0; const did=()=>"f"+(domId++);   // stable per-render ids for label/for pairing
+let afterRender=null;                        // optional callback to restore focus after a structural rebuild
+
 function render(){
+  const sy=window.scrollY;                   // preserve scroll across the full rebuild
+  domId=0;
   chaptersEl.innerHTML="";
   state.chapters.forEach(ch=>chaptersEl.appendChild(renderChapter(ch)));
   renderPreview();
+  window.scrollTo(0,sy);
+  if(afterRender){const fn=afterRender;afterRender=null;fn();}
+}
+
+// Move focus to an element tagged with data-k, caret at end of any text it holds.
+function focusKey(k){
+  const e=document.querySelector('[data-k="'+(window.CSS&&CSS.escape?CSS.escape(k):k)+'"]');
+  if(e){e.focus();if(typeof e.value==="string"){const v=e.value;e.value="";e.value=v;}}
 }
 
 function el(tag,cls,html){const e=document.createElement(tag);if(cls)e.className=cls;if(html!=null)e.innerHTML=html;return e}
@@ -368,7 +381,7 @@ function renderSeq(s,ch){
   const head=el('div','seq-head');
   const prefix=el('span','seq-prefix','subsection');
   const inp=document.createElement('input');
-  inp.value=s.title; inp.placeholder="Subsection title";
+  inp.value=s.title; inp.placeholder="Subsection title"; inp.setAttribute("aria-label","Subsection title");
   inp.oninput=e=>{s.title=e.target.value;renderPreview()};
   head.appendChild(prefix); head.appendChild(inp);
   // allow removing extra subsections (not the first/fixed)
@@ -426,7 +439,7 @@ function renderUnit(u,s,ch){
   const head=el('div','unit-head');
   head.appendChild(el('span','unit-badge'+(u.fixed?' fixed':''),u.fixed?'fixed unit':'unit'));
   const inp=document.createElement('input');
-  inp.value=u.title; inp.placeholder="Unit title";
+  inp.value=u.title; inp.placeholder="Unit title"; inp.setAttribute("aria-label","Unit title");
   inp.oninput=e=>{u.title=e.target.value;renderPreview()};
   head.appendChild(inp);
   if(!u.fixed){
@@ -445,7 +458,11 @@ function renderUnit(u,s,ch){
     const ar=el('div','add-row');
     ["TEXT","VIDEO","PROBLEM"].forEach(k=>{
       const b=el('button','btn-ghost','+ '+k.charAt(0)+k.slice(1).toLowerCase());
-      b.onclick=()=>{u.comps.push(comp(k));render()};
+      b.onclick=()=>{
+        const nc=comp(k); u.comps.push(nc);
+        afterRender=()=>{const w=document.querySelector('[data-comp="'+nc.id+'"]');const inp=w&&w.querySelector('input,textarea,select');if(inp)inp.focus();};
+        render();
+      };
       ar.appendChild(b);
     });
     body.appendChild(ar);
@@ -455,7 +472,7 @@ function renderUnit(u,s,ch){
 }
 
 function renderComp(c,u){
-  const wrap=el('div','comp');
+  const wrap=el('div','comp'); wrap.dataset.comp=c.id;
   const head=el('div','comp-head');
   head.innerHTML=`<span class="comp-diamond">◆</span><span class="comp-kind">${c.kind}</span>`;
   if(!u.fixed || u.comps.length>1){
@@ -482,8 +499,10 @@ function renderComp(c,u){
     body.appendChild(fieldText("Title",c.title||"",v=>c.title=v));
     // problem type selector
     const f=el('div','field');
-    f.appendChild(el('label','lbl',null)).textContent="Problem type";
-    const sel=document.createElement('select');
+    const ptId=did();
+    const ptLab=el('label','lbl',null); ptLab.textContent="Problem type"; ptLab.htmlFor=ptId;
+    f.appendChild(ptLab);
+    const sel=document.createElement('select'); sel.id=ptId;
     PROBLEM_TYPES.forEach(p=>{const o=document.createElement('option');o.value=p;o.textContent=p.replace(/_/g,' ');if(p===c.ptype)o.selected=true;sel.appendChild(o)});
     sel.onchange=e=>{c.ptype=e.target.value;render()};
     f.appendChild(sel); body.appendChild(f);
@@ -513,24 +532,26 @@ function renderOptions(c){
   c.options.forEach((o,i)=>{
     const row=el('div','opt');
     const mk=el('button','marker'+(o.correct?' on':''),markerGlyph(c.ptype,o.correct));
-    mk.title="Set correct";
+    mk.title="Set correct"; mk.setAttribute("aria-label",(o.correct?"Correct answer — ":"Mark correct — ")+"option "+(i+1)); mk.setAttribute("aria-pressed",o.correct?"true":"false");
     mk.onclick=()=>{
       if(multi){o.correct=!o.correct}
       else{c.options.forEach(x=>x.correct=false);o.correct=true}
       render();
     };
     const inp=document.createElement('input');inp.type="text";inp.value=o.t;inp.placeholder="Option "+(i+1);
+    inp.setAttribute("aria-label","Option "+(i+1)+" text"); inp.dataset.k=c.id+":opt:"+i;
     inp.oninput=e=>{o.t=e.target.value;renderPreview()};
     row.appendChild(mk);row.appendChild(inp);
     if(c.options.length>2){
       const del=el('button','btn-icon btn-danger','✕');
+      del.setAttribute("aria-label","Remove option "+(i+1));
       del.onclick=()=>{c.options.splice(i,1);render()};
       row.appendChild(del);
     }
     list.appendChild(row);
   });
   const add=el('button','opt-add','+ Add option');
-  add.onclick=()=>{c.options.push({t:"",correct:false});render()};
+  add.onclick=()=>{c.options.push({t:"",correct:false});afterRender=()=>focusKey(c.id+":opt:"+(c.options.length-1));render()};
   f.appendChild(list);f.appendChild(add);
   return f;
 }
@@ -539,10 +560,13 @@ function markerGlyph(ptype,on){
   return on?"●":"○";
 }
 
-function fieldText(label,val,onset,area=false,ph="",mono=false){
+function fieldText(label,val,onset,area=false,ph="",mono=false,key=null){
   const f=el('div','field');
-  f.appendChild(el('label','lbl',null)).textContent=label;
+  const id=did();
+  const lab=el('label','lbl',null); lab.textContent=label; lab.htmlFor=id;
+  f.appendChild(lab);
   const inp=area?document.createElement('textarea'):document.createElement('input');
+  inp.id=id; if(key)inp.dataset.k=key;
   inp.value=val; if(ph)inp.placeholder=ph; if(mono)inp.className="mono-input";
   inp.oninput=e=>{onset(e.target.value);renderPreview()};
   f.appendChild(inp);
@@ -576,7 +600,9 @@ function serialize(){
           L.push(">>> COMPONENT: "+c.kind);
           if(c.kind==="TEXT"){
             L.push("TITLE: "+(c.title||""));
-            L.push("BODY:"); if(c.body)L.push(c.body);
+            // BODY is fenced with a trailing <<< so prose can contain anything —
+            // lines like "NOTE: ..." or rows of ===/--- no longer truncate it.
+            L.push("BODY:"); if(c.body)L.push(c.body); L.push("<<<");
           }
           if(c.kind==="VIDEO"){
             L.push("TITLE: "+(c.title||""));
@@ -615,7 +641,7 @@ function renderPreview(){
   const txt=serialize();
   const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   const html=txt.split('\n').map(line=>{
-    if(/^={5,}$/.test(line)||/^-{5,}$/.test(line))return '<span class="d">'+esc(line)+'</span>';
+    if(/^={5,}$/.test(line)||/^-{5,}$/.test(line)||line==="<<<")return '<span class="d">'+esc(line)+'</span>';
     if(/^(CHAPTER:|SEQUENTIAL:|>>> UNIT:|>>> COMPONENT:|MODULE$|END OF MODULE$|MODULE AUTHORING)/.test(line))return '<span class="h">'+esc(line)+'</span>';
     if(/^[A-Z_]+:/.test(line))return '<span class="k">'+esc(line.split(':')[0])+':</span>'+esc(line.slice(line.indexOf(':')+1));
     return esc(line);
@@ -749,18 +775,35 @@ function parseTemplate(text){
     }
     // component fields
     if(curComp){
-      // BODY is multi-line: capture everything until next structural marker
+      // BODY is multi-line. Consume it all here (advancing i) so a body line
+      // that looks like a banner/field can't be mistaken for structure.
       if(/^BODY:/.test(line)){
-        bodyBuffer=[]; const rest=line.replace(/^BODY:\s?/,""); if(rest)bodyBuffer.push(rest);
-        continue;
-      }
-      if(bodyBuffer!==null){
-        // stop body at a blank line followed by structure, or any new field/marker
-        if(/^[A-Z_]+:/.test(line)||/^>>>/.test(line)||isEq(line)||isDash(line)){
-          flushBody(); // fall through to handle this line as a field below
-        } else {
-          bodyBuffer.push(line); continue;
+        const collected=[]; const rest=line.replace(/^BODY:\s?/,""); if(rest)collected.push(rest);
+        // Prefer the fenced form: take everything verbatim up to a "<<<" line,
+        // but only if that fence appears before the next hard structural marker.
+        let fenceAt=-1;
+        for(let j=i+1;j<lines.length;j++){
+          const lj=lines[j];
+          if(lj.trim()==="<<<"){fenceAt=j;break;}
+          // Only a real next block ends the search — body prose may itself
+          // contain ===, ---, or a stray >>> that isn't a true marker.
+          if(/^>>>\s*(UNIT|COMPONENT):/i.test(lj))break;
         }
+        if(fenceAt!==-1){
+          for(let k=i+1;k<fenceAt;k++)collected.push(lines[k]);
+          i=fenceAt; // loop's i++ steps past the closing fence
+        } else {
+          // Legacy (unfenced) file: stop at the next field/marker/rule.
+          let k=i+1;
+          for(;k<lines.length;k++){
+            const lk=lines[k];
+            if(/^[A-Z_]+:/.test(lk)||/^>>>/.test(lk)||isEq(lk)||isDash(lk))break;
+            collected.push(lk);
+          }
+          i=k-1; // reprocess the stopping line on the next iteration
+        }
+        if(curComp) curComp.body=collected.join("\n").replace(/\s+$/,"");
+        continue;
       }
       // option lines
       const opt=line.match(/^-\s*([\(\[])([ xX])([\)\]])\s?(.*)$/);
