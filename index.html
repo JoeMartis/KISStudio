@@ -80,6 +80,8 @@
   .cl-table td{padding:7px 12px;border-bottom:1px solid var(--line-soft);vertical-align:top}
   .cl-table tr:hover td{background:var(--blue-soft)}
   .cl-table .cl-n{color:var(--ink-soft);font-family:var(--mono);font-size:11px;text-align:right}
+  .cl-table tr.cl-group td{background:var(--blue-soft);color:var(--navy);font-weight:700;font-size:11px;letter-spacing:.04em;text-transform:uppercase;padding:8px 12px;border-top:1px solid var(--line)}
+  .cl-table tr.cl-group:hover td{background:var(--blue-soft)}
   .cl-foot{display:flex;justify-content:flex-end;gap:10px;padding:12px 18px;border-top:1px solid var(--line)}
 
   /* Layout */
@@ -1297,13 +1299,13 @@ function mdToHtml(body){
 // both the OLX export (so pasted blocks arrive pre-named) and the checklist.
 function componentLabel(c){
   if(c.kind==="TEXT") return (c.title||"").trim() || "Text";
-  if(c.kind==="VIDEO") return "Video"+((c.title||"").trim()?" — "+c.title.trim():"");
+  if(c.kind==="VIDEO") return "Video"+((c.title||"").trim()?": "+c.title.trim():"");
   const t=(c.title||"").trim();
-  if(t) return "Problem — "+t;
+  if(t) return "Problem: "+t;
   const q=(c.question||"").replace(/[*_`>#]/g,"").replace(/\s+/g," ").trim();
-  return "Problem"+(q?" — "+(q.length>50?q.slice(0,50).trim()+"…":q):"");
+  return "Problem"+(q?": "+(q.length>50?q.slice(0,50).trim()+"...":q):"");
 }
-function componentName(c,u){ return ((u&&u.title)||"Unit").trim()+" · "+componentLabel(c); }
+function componentName(c,u){ return ((u&&u.title)||"Unit").trim()+" - "+componentLabel(c); }
 
 function olxProblem(c,dn){
   const opts=c.options||[];
@@ -1433,7 +1435,7 @@ function buildChecklist(st){
       counts[c.kind]=(counts[c.kind]||0)+1;
       rows.push({
         library:lib, collection:ch.name,
-        location:ch.name+" › "+(s.title||"")+" › "+(u.title||""),
+        location:ch.name+" > "+(s.title||"")+" > "+(u.title||""),
         type:c.kind.charAt(0)+c.kind.slice(1).toLowerCase(),
         name:componentName(c,u)
       });
@@ -1463,20 +1465,30 @@ function showChecklist(){
   const x=el('button','btn','✕'); x.style.cssText="padding:4px 10px"; x.onclick=()=>back.remove(); head.appendChild(x);
   card.appendChild(head);
   const sum=el('div','cl-sum');
-  sum.textContent='Library: “'+lib+'”  ·  '+collections.length+' collections (one per chapter)  ·  '+rows.length+' components ('+(counts.TEXT||0)+' text · '+(counts.VIDEO||0)+' video · '+(counts.PROBLEM||0)+' problem)';
+  sum.textContent='Library: "'+lib+'"   |   '+collections.length+' collections (one per chapter)   |   '+rows.length+' components ('+(counts.TEXT||0)+' text, '+(counts.VIDEO||0)+' video, '+(counts.PROBLEM||0)+' problem)';
   card.appendChild(sum);
-  // table
+  // table — grouped by collection (chapter) with subheaders
   const wrap=el('div','cl-tablewrap'); const tbl=document.createElement('table'); tbl.className='cl-table';
-  const thead=document.createElement('thead'); thead.innerHTML='<tr><th>#</th><th>Collection</th><th>Type</th><th>Suggested name</th><th>Location</th></tr>'; tbl.appendChild(thead);
-  const tb=document.createElement('tbody');
-  rows.forEach((r,i)=>{ const tr=document.createElement('tr');
-    [String(i+1),r.collection,r.type,r.name,r.location].forEach((v,ci)=>{ const td=document.createElement('td'); td.textContent=v; if(ci===0)td.className='cl-n'; tr.appendChild(td); });
-    tb.appendChild(tr); });
+  const thead=document.createElement('thead'); thead.innerHTML='<tr><th>#</th><th>Type</th><th>Suggested name</th><th>Location</th></tr>'; tbl.appendChild(thead);
+  const tb=document.createElement('tbody'); let lastCol=null;
+  rows.forEach((r,i)=>{
+    if(r.collection!==lastCol){
+      lastCol=r.collection;
+      const cnt=rows.filter(x=>x.collection===r.collection).length;
+      const gtr=document.createElement('tr'); gtr.className='cl-group';
+      const gtd=document.createElement('td'); gtd.colSpan=4;
+      gtd.textContent="Collection: "+r.collection+"   ("+cnt+" component"+(cnt>1?"s":"")+")";
+      gtr.appendChild(gtd); tb.appendChild(gtr);
+    }
+    const tr=document.createElement('tr');
+    [String(i+1),r.type,r.name,r.location].forEach((v,ci)=>{ const td=document.createElement('td'); td.textContent=v; if(ci===0)td.className='cl-n'; tr.appendChild(td); });
+    tb.appendChild(tr);
+  });
   tbl.appendChild(tb); wrap.appendChild(tbl); card.appendChild(wrap);
   // footer
   const foot=el('div','cl-foot');
   const dl=el('button','btn-primary','Download CSV');
-  dl.onclick=()=>{ const blob=new Blob([checklistCsv(st0())],{type:"text/csv"}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=slug+"_library_checklist.csv"; a.click(); toast("Downloaded "+a.download); };
+  dl.onclick=()=>{ const blob=new Blob([String.fromCharCode(0xFEFF)+checklistCsv(st0())],{type:"text/csv;charset=utf-8"}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=slug+"_library_checklist.csv"; a.click(); toast("Downloaded "+a.download); };
   const cp=el('button','btn','Copy table');
   cp.onclick=()=>{ const tsv=["#\tCollection\tType\tSuggested name\tLocation",...rows.map((r,i)=>(i+1)+"\t"+r.collection+"\t"+r.type+"\t"+r.name+"\t"+r.location)].join("\n");
     const ok=()=>{cp.textContent="Copied ✓";setTimeout(()=>cp.textContent="Copy table",1400);};
