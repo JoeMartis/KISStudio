@@ -70,6 +70,8 @@
   /* Layout */
   main{padding:28px 0 80px}
   .grid{display:grid;grid-template-columns:1fr 380px;gap:28px;align-items:start}
+  .grid.preview-hidden{grid-template-columns:1fr}
+  .grid.preview-hidden .preview-col{display:none}
   @media(max-width:980px){.grid{grid-template-columns:1fr}.preview-col{position:static!important}}
 
   /* Module meta card */
@@ -178,6 +180,7 @@
       <h1>Module Builder <span class="sub">— structured authoring for OLX</span></h1>
     </div>
     <div class="actions">
+      <button class="btn" id="previewToggle" aria-pressed="false">Show preview</button>
       <button class="btn" id="resetBtn">Reset</button>
       <button class="btn" id="importBtn">Import .txt</button>
       <input type="file" id="fileInput" accept=".txt,text/plain" style="display:none">
@@ -187,7 +190,7 @@
 </header>
 
 <main class="wrap">
-  <div class="grid">
+  <div class="grid preview-hidden" id="grid">
     <div class="build-col">
       <!-- Module metadata -->
       <section class="meta-card">
@@ -914,6 +917,15 @@ function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t
 document.getElementById('downloadBtn').onclick=download;
 document.getElementById('downloadBtn2').onclick=download;
 document.getElementById('copyBtn').onclick=copy;
+// Preview panel is hidden by default and revealed on demand.
+function setPreview(show){
+  document.getElementById('grid').classList.toggle('preview-hidden',!show);
+  const b=document.getElementById('previewToggle');
+  b.textContent=show?"Hide preview":"Show preview";
+  b.setAttribute('aria-pressed',show?"true":"false");
+}
+document.getElementById('previewToggle').onclick=()=>
+  setPreview(document.getElementById('grid').classList.contains('preview-hidden'));
 document.getElementById('importBtn').onclick=()=>document.getElementById('fileInput').click();
 document.getElementById('fileInput').onchange=e=>{
   const file=e.target.files[0]; if(!file) return;
