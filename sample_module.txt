@@ -23,14 +23,14 @@ SEQUENTIAL: Module Overview and Learning Goals
 >>> COMPONENT: TEXT
 TITLE: Welcome to AI and Finance
 BODY:
-This module introduces the core ideas behind applying AI to finance.
+Welcome to *AI and Finance*. This module shows how machine learning is reshaping _financial analysis_ and decision-making.
 
 By the end you will be able to:
-- explain where machine learning fits in a financial workflow
-- read a basic model evaluation report
-- reason about the *risks* of automated decisions.
+- explain where ML fits in a *financial workflow*
+- read a basic _model evaluation_ report
+- reason about the *risks* of automated decisions
 
-Each lecture pairs a short video with a quick check-for-understanding.
+New to the tools? Skim the [setup guide](https://example.edu/uai/setup) before Lecture 1.
 <<<
 
 ================================================================================
@@ -45,14 +45,19 @@ SEQUENTIAL: Lecture 1: Foundations
 >>> COMPONENT: TEXT
 TITLE: 
 BODY:
-In this lecture we set up the vocabulary: features, labels, training, and inference.
+In this lecture we set up the vocabulary: *features*, *labels*, *training*, and *inference*.
 <<<
 
 >>> UNIT: L1.1 What is a model?
 >>> COMPONENT: TEXT
 TITLE: Reading
 BODY:
-A *model* maps inputs (features) to outputs (predictions). Training fits the mapping to historical data.
+A *model* maps inputs (called _features_) to outputs (called _labels_). *Training* fits that mapping to historical data; _inference_ is using the trained model on new data.
+
+Key terms:
+- *feature* — an input variable the model reads
+- *label* — the value the model predicts
+- *inference* — running the trained model on new inputs
 <<<
 
 >>> COMPONENT: VIDEO
@@ -81,7 +86,11 @@ HINT: Think inputs vs. outputs.
 >>> COMPONENT: TEXT
 TITLE: Reading
 BODY:
-Accuracy alone can mislead on imbalanced data. Precision and recall tell a fuller story.
+*Accuracy* alone can mislead on _imbalanced_ data — *precision* and *recall* tell a fuller story.
+
+[[image: confusion_matrix.png | A confusion matrix: TP, FP, FN, TN]]
+
+See the [metrics cheat-sheet](https://example.edu/uai/metrics) for the full definitions.
 <<<
 
 >>> COMPONENT: PROBLEM
@@ -122,7 +131,7 @@ We apply the foundations to a forecasting task and discuss model risk.
 >>> COMPONENT: TEXT
 TITLE: Reading
 BODY:
-A naive forecast predicts tomorrow equals today. Good models must beat that baseline.
+A _naive_ forecast predicts *tomorrow = today*. A good model must *beat that baseline* — otherwise it adds no value.
 <<<
 
 >>> COMPONENT: VIDEO
@@ -248,7 +257,9 @@ SEQUENTIAL: Module Summary
 >>> COMPONENT: TEXT
 TITLE: Module Summary
 BODY:
-You covered foundations, evaluation, forecasting, and model risk. Next: portfolio construction.
+You covered *foundations*, *evaluation*, *forecasting*, and _model risk_.
+
+Next up: [portfolio construction](https://example.edu/uai/next).
 <<<
 
 >>> UNIT: Thank You
