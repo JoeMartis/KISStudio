@@ -23,6 +23,7 @@ SEQUENTIAL: Module Overview and Learning Goals
 >>> COMPONENT: TEXT
 CONCEPT: Module overview
 QUALIFIER: 
+LIB_TYPE: 
 TITLE: Welcome to AI and Finance
 BODY:
 Welcome to *AI and Finance*. This module shows how machine learning is reshaping _financial analysis_ and decision-making.
@@ -47,6 +48,7 @@ SEQUENTIAL: Lecture 1: Foundations
 >>> COMPONENT: TEXT
 CONCEPT: 
 QUALIFIER: 
+LIB_TYPE: 
 TITLE: 
 BODY:
 In this lecture we set up the vocabulary: *features*, *labels*, *training*, and *inference*.
@@ -56,6 +58,7 @@ In this lecture we set up the vocabulary: *features*, *labels*, *training*, and 
 >>> COMPONENT: TEXT
 CONCEPT: Features and labels
 QUALIFIER: 
+LIB_TYPE: 
 TITLE: Reading
 BODY:
 A *model* maps inputs (called _features_) to outputs (called _labels_). *Training* fits that mapping to historical data; _inference_ is using the trained model on new data.
@@ -69,6 +72,7 @@ Key terms:
 >>> COMPONENT: VIDEO
 CONCEPT: What is a model
 QUALIFIER: 
+LIB_TYPE: 
 TITLE: Models in 4 minutes
 VIDEO_URL: E-4aGqg69TI
 TRANSCRIPT_FILE: L1-1.srt
@@ -76,6 +80,7 @@ TRANSCRIPT_FILE: L1-1.srt
 >>> COMPONENT: PROBLEM
 CONCEPT: Feature vs label
 QUALIFIER: 
+LIB_TYPE: 
 TITLE: 
 PROBLEM_TYPE: multiple_choice
 QUESTION:
@@ -95,6 +100,7 @@ HINT: Think *inputs* vs. *outputs*.
 >>> COMPONENT: TEXT
 CONCEPT: Model evaluation metrics
 QUALIFIER: 
+LIB_TYPE: Diagram
 TITLE: Reading
 BODY:
 *Accuracy* alone can mislead on _imbalanced_ data — *precision* and *recall* tell a fuller story.
@@ -107,6 +113,7 @@ See the [metrics cheat-sheet](https://example.edu/uai/metrics) for the full defi
 >>> COMPONENT: PROBLEM
 CONCEPT: Model evaluation metrics
 QUALIFIER: select all
+LIB_TYPE: 
 TITLE: 
 PROBLEM_TYPE: checkboxes
 QUESTION:
@@ -126,6 +133,7 @@ HINT:
 >>> COMPONENT: TEXT
 CONCEPT: 
 QUALIFIER: 
+LIB_TYPE: 
 TITLE: 
 BODY:
 You can now define *features*, *labels*, *training*, and *inference*.
@@ -139,6 +147,7 @@ SEQUENTIAL: Lecture 2: Risk and Forecasting
 >>> COMPONENT: TEXT
 CONCEPT: 
 QUALIFIER: 
+LIB_TYPE: 
 TITLE: 
 BODY:
 We apply the foundations to a forecasting task and discuss model risk.
@@ -148,6 +157,7 @@ We apply the foundations to a forecasting task and discuss model risk.
 >>> COMPONENT: TEXT
 CONCEPT: Forecasting baselines
 QUALIFIER: 
+LIB_TYPE: 
 TITLE: Reading
 BODY:
 A _naive_ forecast predicts *tomorrow = today*. A good model must *beat that baseline* — otherwise it adds no value.
@@ -156,6 +166,7 @@ A _naive_ forecast predicts *tomorrow = today*. A good model must *beat that bas
 >>> COMPONENT: VIDEO
 CONCEPT: Why baselines matter
 QUALIFIER: 
+LIB_TYPE: 
 TITLE: Baselines matter
 VIDEO_URL: E-4aGqg69TI
 TRANSCRIPT_FILE: L2-1.srt
@@ -163,6 +174,7 @@ TRANSCRIPT_FILE: L2-1.srt
 >>> COMPONENT: PROBLEM
 CONCEPT: Annual return
 QUALIFIER: 
+LIB_TYPE: 
 TITLE: 
 PROBLEM_TYPE: numerical
 QUESTION:
@@ -179,6 +191,7 @@ HINT:
 >>> COMPONENT: TEXT
 CONCEPT: 
 QUALIFIER: 
+LIB_TYPE: 
 TITLE: 
 BODY:
 You can frame a forecast, set a baseline, and compute simple returns.
@@ -196,6 +209,7 @@ SEQUENTIAL: Recitation 1: Tooling
 >>> COMPONENT: TEXT
 CONCEPT: 
 QUALIFIER: 
+LIB_TYPE: 
 TITLE: 
 BODY:
 A walkthrough of the notebook environment used in assignments.
@@ -205,6 +219,7 @@ A walkthrough of the notebook environment used in assignments.
 >>> COMPONENT: VIDEO
 CONCEPT: Notebook setup
 QUALIFIER: 
+LIB_TYPE: 
 TITLE: Notebook setup
 VIDEO_URL: E-4aGqg69TI
 TRANSCRIPT_FILE: R1-1.srt
@@ -213,6 +228,7 @@ TRANSCRIPT_FILE: R1-1.srt
 >>> COMPONENT: VIDEO
 CONCEPT: Loading market data
 QUALIFIER: 
+LIB_TYPE: 
 TITLE: Loading data
 VIDEO_URL: E-4aGqg69TI
 TRANSCRIPT_FILE: R1-2.srt
@@ -221,6 +237,7 @@ TRANSCRIPT_FILE: R1-2.srt
 >>> COMPONENT: TEXT
 CONCEPT: 
 QUALIFIER: 
+LIB_TYPE: 
 TITLE: 
 BODY:
 You can open the notebook and load a price series.
@@ -238,6 +255,7 @@ SEQUENTIAL: Assignment 1: First Forecast
 >>> COMPONENT: TEXT
 CONCEPT: 
 QUALIFIER: 
+LIB_TYPE: 
 TITLE: 
 BODY:
 Build and evaluate a baseline forecaster. Submit your notebook and answers below.
@@ -247,6 +265,7 @@ Build and evaluate a baseline forecaster. Submit your notebook and answers below
 >>> COMPONENT: PROBLEM
 CONCEPT: Baseline RMSE
 QUALIFIER: 
+LIB_TYPE: 
 TITLE: 
 PROBLEM_TYPE: numerical
 QUESTION:
@@ -263,6 +282,7 @@ HINT:
 >>> COMPONENT: PROBLEM
 CONCEPT: Beating the baseline
 QUALIFIER: 
+LIB_TYPE: 
 TITLE: 
 PROBLEM_TYPE: text_input
 QUESTION:
@@ -278,6 +298,7 @@ HINT:
 >>> COMPONENT: TEXT
 CONCEPT: 
 QUALIFIER: 
+LIB_TYPE: 
 TITLE: 
 BODY:
 Submit your notebook and your two answers above. Grading is based on a working baseline and clear reasoning.
@@ -295,6 +316,7 @@ SEQUENTIAL: Module Summary
 >>> COMPONENT: TEXT
 CONCEPT: 
 QUALIFIER: 
+LIB_TYPE: 
 TITLE: Module Summary
 BODY:
 You covered *foundations*, *evaluation*, *forecasting*, and _model risk_.
@@ -306,6 +328,7 @@ Next up: [portfolio construction](https://example.edu/uai/next).
 >>> COMPONENT: VIDEO
 CONCEPT: Course wrap-up
 QUALIFIER: 
+LIB_TYPE: 
 TITLE: Thank you and next steps
 VIDEO_URL: E-4aGqg69TI
 TRANSCRIPT_FILE: outro.srt

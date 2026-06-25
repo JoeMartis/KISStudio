@@ -652,7 +652,7 @@ function renderUnit(u,s,ch){
   wrap.appendChild(head);
 
   const body=el('div','unit-body');
-  u.comps.forEach(c=>body.appendChild(renderComp(c,u)));
+  u.comps.forEach(c=>body.appendChild(renderComp(c,u,ch)));
 
   // add-component menu (only on non-fixed content units, and assignment parts)
   if(!u.fixed){
@@ -672,7 +672,7 @@ function renderUnit(u,s,ch){
   return wrap;
 }
 
-function renderComp(c,u){
+function renderComp(c,u,ch){
   const wrap=el('div','comp'); wrap.dataset.comp=c.id;
   const head=el('div','comp-head');
   head.innerHTML=`<span class="comp-diamond">◆</span><span class="comp-kind"></span>`;
@@ -694,6 +694,14 @@ function renderComp(c,u){
   crow.appendChild(fieldText("Concept (library name)",c.concept||"",v=>c.concept=v,false,"e.g. Backpropagation — the word a builder would search"));
   crow.appendChild(fieldText("Qualifier (optional)",c.qualifier||"",v=>c.qualifier=v,false,"e.g. chain rule step"));
   body.appendChild(crow);
+  // Type (library convention) — defaults to the derived value; author can override.
+  const tf=el('div','field');
+  const tid=did(); const tl=el('label','lbl',null); tl.textContent="Type (library)"; tl.htmlFor=tid; tf.appendChild(tl);
+  const tsel=document.createElement('select'); tsel.id=tid;
+  const eff=componentType(c,ch);
+  LIB_TYPES.forEach(tp=>{const o=document.createElement('option');o.value=tp;o.textContent=tp+(tp===derivedType(c,ch)?" (default)":"");if(tp===eff)o.selected=true;tsel.appendChild(o);});
+  tsel.onchange=e=>{c.libType=e.target.value;markDirty();renderPreview();renderOutline();};
+  tf.appendChild(tsel); body.appendChild(tf);
   if(c.kind==="TEXT"){
     body.appendChild(fieldText("Title",c.title||"",v=>c.title=v,false,"Optional heading"));
     body.appendChild(fieldText("Body",c.body||"",v=>c.body=v,true,"Write prose. *bold*, _italic_, [text](url), [[image: file.png | alt]]"));
@@ -830,6 +838,7 @@ function serialize(){
           L.push(">>> COMPONENT: "+c.kind);
           L.push("CONCEPT: "+one(c.concept));
           L.push("QUALIFIER: "+one(c.qualifier));
+          L.push("LIB_TYPE: "+one(c.libType));
           if(c.kind==="TEXT"){
             L.push("TITLE: "+one(c.title));
             pushBlock(L,"BODY",c.body);
@@ -1093,6 +1102,7 @@ function parseTemplate(text){
         if(key==="TITLE")curComp.title=val;
         else if(key==="CONCEPT")curComp.concept=val;
         else if(key==="QUALIFIER")curComp.qualifier=val;
+        else if(key==="LIB_TYPE")curComp.libType=val;
         else if(key==="BODY")curComp.body=val;
         else if(key==="VIDEO_URL")curComp.url=val;
         else if(key==="TRANSCRIPT_FILE")curComp.transcript=val;
@@ -1159,7 +1169,7 @@ function compFromParsed(c){
       out.answer=c.answer||""; out.tolerance=c.tolerance||"";
     }
   }
-  out.concept=c.concept||""; out.qualifier=c.qualifier||"";   // library naming, all kinds
+  out.concept=c.concept||""; out.qualifier=c.qualifier||""; out.libType=c.libType||"";   // library naming, all kinds
   return out;
 }
 
@@ -1304,12 +1314,15 @@ function mdToHtml(body){
 // A flat library has no hierarchy, so component display names must stand alone.
 // Convention: "<unit title> · <type label>" — unique, sortable, and shared by
 // both the OLX export (so pasted blocks arrive pre-named) and the checklist.
-// Type from the fixed convention vocabulary, derived from the kind (and grading).
-function componentType(c,ch){
+// Fixed convention Type vocabulary. Derived from the kind+grading by default,
+// but the author can override per component (c.libType).
+const LIB_TYPES=["Lecture","KC","Problem","Worked example","Reading","Diagram","Recitation","Discussion"];
+function derivedType(c,ch){
   if(c.kind==="VIDEO") return "Lecture";
   if(c.kind==="TEXT") return "Reading";
   return (ch&&ch.kind==="assignments") ? "Problem" : "KC";   // graded problems vs knowledge checks
 }
+function componentType(c,ch){ const o=(c.libType||"").trim(); return LIB_TYPES.includes(o)?o:derivedType(c,ch); }
 // Concept-first name: "<Concept> — <Type> [qualifier]". Falls back to title/unit
 // when no concept is set yet (the checklist reports concept coverage).
 function componentName(c,u,ch){
