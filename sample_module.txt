@@ -1,0 +1,263 @@
+================================================================================
+MODULE AUTHORING TEMPLATE
+================================================================================
+
+================================================================================
+MODULE
+================================================================================
+DISPLAY_NAME: AI and Finance
+COURSE_ID: UAI.FIN.1
+ORG: UAI_SOURCE
+RUN: 1T2026
+SHORT_DESCRIPTION: A hands-on introduction to how modern AI reshapes financial analysis and decision-making.
+
+================================================================================
+CHAPTER: Introduction
+================================================================================
+
+--------------------------------------------------------------------------------
+SEQUENTIAL: Module Overview and Learning Goals
+--------------------------------------------------------------------------------
+
+>>> UNIT: Module Overview and Learning Goals
+>>> COMPONENT: TEXT
+TITLE: Welcome to AI and Finance
+BODY:
+This module introduces the core ideas behind applying AI to finance.
+
+By the end you will be able to:
+- explain where machine learning fits in a financial workflow
+- read a basic model evaluation report
+- reason about the *risks* of automated decisions.
+
+Each lecture pairs a short video with a quick check-for-understanding.
+<<<
+
+================================================================================
+CHAPTER: Lectures
+================================================================================
+
+--------------------------------------------------------------------------------
+SEQUENTIAL: Lecture 1: Foundations
+--------------------------------------------------------------------------------
+
+>>> UNIT: Overview and Learning Objectives
+>>> COMPONENT: TEXT
+TITLE: 
+BODY:
+In this lecture we set up the vocabulary: features, labels, training, and inference.
+<<<
+
+>>> UNIT: L1.1 What is a model?
+>>> COMPONENT: TEXT
+TITLE: Reading
+BODY:
+A *model* maps inputs (features) to outputs (predictions). Training fits the mapping to historical data.
+<<<
+
+>>> COMPONENT: VIDEO
+TITLE: Models in 4 minutes
+VIDEO_URL: https://videos.uai.edu/fin/L1-1.mp4
+TRANSCRIPT_FILE: L1-1.srt
+DURATION: 4:12
+
+>>> COMPONENT: PROBLEM
+TITLE: 
+PROBLEM_TYPE: multiple_choice
+QUESTION:
+Which best describes a feature?
+<<<
+OPTIONS:
+- ( ) The value the model predicts
+- (x) An input variable the model uses
+- ( ) The model's accuracy
+- ( ) A type of neural network
+EXPLANATION:
+A feature is an input; the prediction is the output (label).
+<<<
+HINT: Think inputs vs. outputs.
+
+>>> UNIT: L1.2 Evaluating a model
+>>> COMPONENT: TEXT
+TITLE: Reading
+BODY:
+Accuracy alone can mislead on imbalanced data. Precision and recall tell a fuller story.
+<<<
+
+>>> COMPONENT: PROBLEM
+TITLE: 
+PROBLEM_TYPE: checkboxes
+QUESTION:
+Which are evaluation metrics? (select all)
+<<<
+OPTIONS:
+- [x] Precision
+- [x] Recall
+- [ ] Learning rate
+- [x] F1 score
+EXPLANATION:
+Learning rate is a training hyperparameter, not an evaluation metric.
+<<<
+HINT: 
+
+>>> UNIT: Summary
+>>> COMPONENT: TEXT
+TITLE: 
+BODY:
+You can now define features, labels, training, and inference.
+<<<
+
+--------------------------------------------------------------------------------
+SEQUENTIAL: Lecture 2: Risk and Forecasting
+--------------------------------------------------------------------------------
+
+>>> UNIT: Overview and Learning Objectives
+>>> COMPONENT: TEXT
+TITLE: 
+BODY:
+We apply the foundations to a forecasting task and discuss model risk.
+<<<
+
+>>> UNIT: L2.1 Forecasting returns
+>>> COMPONENT: TEXT
+TITLE: Reading
+BODY:
+A naive forecast predicts tomorrow equals today. Good models must beat that baseline.
+<<<
+
+>>> COMPONENT: VIDEO
+TITLE: Baselines matter
+VIDEO_URL: https://videos.uai.edu/fin/L2-1.mp4
+TRANSCRIPT_FILE: L2-1.srt
+DURATION: 5:03
+
+>>> COMPONENT: PROBLEM
+TITLE: 
+PROBLEM_TYPE: numerical
+QUESTION:
+If a portfolio grows from 100 to 112 in a year, what is the annual return (%)?
+<<<
+ANSWER: 12
+TOLERANCE: 0.5
+EXPLANATION:
+Return = (112-100)/100 = 12%.
+<<<
+HINT: 
+
+>>> UNIT: Summary
+>>> COMPONENT: TEXT
+TITLE: 
+BODY:
+You can frame a forecast, set a baseline, and compute simple returns.
+<<<
+
+================================================================================
+CHAPTER: Recitations
+================================================================================
+
+--------------------------------------------------------------------------------
+SEQUENTIAL: Recitation 1: Tooling
+--------------------------------------------------------------------------------
+
+>>> UNIT: Recitation Overview
+>>> COMPONENT: TEXT
+TITLE: 
+BODY:
+A walkthrough of the notebook environment used in assignments.
+<<<
+
+>>> UNIT: R1.1 Setting up the notebook
+>>> COMPONENT: VIDEO
+TITLE: Notebook setup
+VIDEO_URL: https://videos.uai.edu/fin/R1-1.mp4
+TRANSCRIPT_FILE: R1-1.srt
+DURATION: 6:20
+
+>>> UNIT: R1.2 Loading market data
+>>> COMPONENT: VIDEO
+TITLE: Loading data
+VIDEO_URL: https://videos.uai.edu/fin/R1-2.mp4
+TRANSCRIPT_FILE: R1-2.srt
+DURATION: 7:45
+
+>>> UNIT: Recitation Summary
+>>> COMPONENT: TEXT
+TITLE: 
+BODY:
+You can open the notebook and load a price series.
+<<<
+
+================================================================================
+CHAPTER: Assignments
+================================================================================
+
+--------------------------------------------------------------------------------
+SEQUENTIAL: Assignment 1: First Forecast
+--------------------------------------------------------------------------------
+
+>>> UNIT: Assignment Overview
+>>> COMPONENT: TEXT
+TITLE: 
+BODY:
+Build and evaluate a baseline forecaster. Submit your notebook and answers below.
+<<<
+
+>>> UNIT: Assignment 1: Part 1
+>>> COMPONENT: PROBLEM
+TITLE: 
+PROBLEM_TYPE: numerical
+QUESTION:
+What RMSE did your baseline achieve (2 decimals)?
+<<<
+ANSWER: 0.00
+TOLERANCE: 100
+EXPLANATION:
+Any honest value is accepted; this checks you ran it.
+<<<
+HINT: 
+
+>>> UNIT: Assignment 1: Part 2
+>>> COMPONENT: PROBLEM
+TITLE: 
+PROBLEM_TYPE: text_input
+QUESTION:
+In one sentence, why must a model beat the naive baseline?
+<<<
+ANSWER: Because the baseline is free, so a model only adds value if it does better.
+EXPLANATION:
+We grade for the idea, not exact wording.
+<<<
+HINT: 
+
+>>> UNIT: Assignment Summary
+>>> COMPONENT: TEXT
+TITLE: 
+BODY:
+Submit your notebook and your two answers above. Grading is based on a working baseline and clear reasoning.
+<<<
+
+================================================================================
+CHAPTER: Conclusion
+================================================================================
+
+--------------------------------------------------------------------------------
+SEQUENTIAL: Module Summary
+--------------------------------------------------------------------------------
+
+>>> UNIT: Module Summary
+>>> COMPONENT: TEXT
+TITLE: Module Summary
+BODY:
+You covered foundations, evaluation, forecasting, and model risk. Next: portfolio construction.
+<<<
+
+>>> UNIT: Thank You
+>>> COMPONENT: VIDEO
+TITLE: Thank you and next steps
+VIDEO_URL: https://videos.uai.edu/fin/outro.mp4
+TRANSCRIPT_FILE: outro.srt
+DURATION: 1:30
+
+================================================================================
+END OF MODULE
+================================================================================
