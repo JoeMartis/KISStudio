@@ -681,11 +681,8 @@ function renderComp(c,u){
     body.appendChild(fieldText("Body",c.body||"",v=>c.body=v,true,"Write prose. *bold*, _italic_, [text](url), [[image: file.png | alt]]"));
   }
   if(c.kind==="VIDEO"){
-    const row=el('div','comp-row');
-    row.appendChild(fieldText("Title",c.title||"",v=>c.title=v));
-    row.appendChild(fieldText("Duration",c.duration||"",v=>c.duration=v,false,"4:12"));
-    body.appendChild(row);
-    body.appendChild(fieldText("Video URL",c.url||"",v=>c.url=v,false,"https://...",true));
+    body.appendChild(fieldText("Title",c.title||"",v=>c.title=v));
+    body.appendChild(fieldText("Video — YouTube ID or URL",c.url||"",v=>c.url=v,false,"E-4aGqg69TI  or  https://youtu.be/E-4aGqg69TI",true));
     body.appendChild(fieldText("Transcript file",c.transcript||"",v=>c.transcript=v,false,"name.srt",true));
   }
   if(c.kind==="PROBLEM"){
@@ -821,7 +818,6 @@ function serialize(){
             L.push("TITLE: "+one(c.title));
             L.push("VIDEO_URL: "+one(c.url));
             L.push("TRANSCRIPT_FILE: "+one(c.transcript));
-            L.push("DURATION: "+one(c.duration));
           }
           if(c.kind==="PROBLEM"){
             L.push("TITLE: "+one(c.title));
@@ -888,7 +884,7 @@ function validate(){
     const at=ch.name+" › "+(u.title||"untitled unit");
     const sel='[data-comp="'+c.id+'"]';
     const add=msg=>issues.push({where:at,msg,sel});
-    if(c.kind==="VIDEO" && !(c.url||"").trim()) add("Video has no URL");
+    if(c.kind==="VIDEO" && !(c.url||"").trim()) add("Video has no ID or URL");
     if(c.kind==="TEXT" && !(c.body||"").trim() && !(c.title||"").trim()) add("Empty text component");
     if(c.kind==="PROBLEM"){
       if(!(c.question||"").trim()) add("Problem has no question");
@@ -1303,9 +1299,11 @@ function olxProblem(c){
 }
 function olxVideo(c){
   const url=(c.url||"").trim();
-  const yt=url.match(/(?:youtu\.be\/|[?&]v=|embed\/)([\w-]{11})/);
+  // Accept a full URL or a bare 11-char YouTube ID.
+  const m=url.match(/(?:youtu\.be\/|[?&]v=|embed\/)([\w-]{11})/);
+  const id = m ? m[1] : (/^[\w-]{11}$/.test(url) ? url : null);
   let a='display_name="'+xmlEsc(c.title||"Video")+'" download_video="true"';
-  if(yt) a+=' youtube_id_1_0="'+xmlEsc(yt[1])+'"';
+  if(id) a+=' youtube_id_1_0="'+xmlEsc(id)+'"';
   else if(url) a+=' html5_sources="'+xmlEsc(JSON.stringify([url]))+'"';
   if((c.transcript||"").trim()) a+=' transcripts="'+xmlEsc(JSON.stringify({en:c.transcript.trim()}))+'"';
   return '<video '+a+'/>\n';
