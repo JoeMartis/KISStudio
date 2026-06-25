@@ -69,6 +69,19 @@
   .btn-olx{background:var(--accent);color:#fff;border-color:var(--accent);padding:8px 16px;font-weight:600}
   .btn-olx:hover{background:#a3380a;border-color:#a3380a}
 
+  /* Library checklist modal */
+  .cl-back{position:fixed;inset:0;background:rgba(21,32,43,.45);z-index:300;display:flex;align-items:center;justify-content:center;padding:24px}
+  .cl-card{background:var(--card);border:1px solid var(--line);border-radius:12px;box-shadow:0 12px 48px rgba(0,0,0,.25);width:min(960px,96vw);max-height:88vh;display:flex;flex-direction:column;overflow:hidden}
+  .cl-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 18px;border-bottom:1px solid var(--line);font-size:14px}
+  .cl-sum{padding:10px 18px;font-size:12.5px;color:var(--ink-soft);border-bottom:1px solid var(--line-soft);background:var(--paper)}
+  .cl-tablewrap{overflow:auto;flex:1}
+  .cl-table{border-collapse:collapse;width:100%;font-size:12.5px}
+  .cl-table th{position:sticky;top:0;background:#eef2f7;text-align:left;font-weight:700;color:var(--ink-soft);padding:8px 12px;border-bottom:1px solid var(--line);white-space:nowrap}
+  .cl-table td{padding:7px 12px;border-bottom:1px solid var(--line-soft);vertical-align:top}
+  .cl-table tr:hover td{background:var(--blue-soft)}
+  .cl-table .cl-n{color:var(--ink-soft);font-family:var(--mono);font-size:11px;text-align:right}
+  .cl-foot{display:flex;justify-content:flex-end;gap:10px;padding:12px 18px;border-top:1px solid var(--line)}
+
   /* Layout */
   main{padding:28px 0 80px}
   .grid{display:grid;grid-template-columns:260px 1fr 380px;gap:28px;align-items:start}
@@ -254,6 +267,7 @@
       <input type="file" id="fileInput" accept=".txt,text/plain" style="display:none">
       <button class="btn-primary" id="downloadBtn">Download .txt</button>
       <button class="btn btn-olx" id="olxExport" type="button" title="Export an edX course archive (.tar.gz)" style="display:none">Export to edX</button>
+      <button class="btn" id="checklistBtn" type="button" title="Library paste checklist (CSV)" style="display:none">Checklist</button>
     </div>
   </div>
 </header>
@@ -1278,7 +1292,20 @@ function mdToHtml(body){
   flushPara(); closeList();
   return out.join("\n");
 }
-function olxProblem(c){
+// A flat library has no hierarchy, so component display names must stand alone.
+// Convention: "<unit title> · <type label>" — unique, sortable, and shared by
+// both the OLX export (so pasted blocks arrive pre-named) and the checklist.
+function componentLabel(c){
+  if(c.kind==="TEXT") return (c.title||"").trim() || "Text";
+  if(c.kind==="VIDEO") return "Video"+((c.title||"").trim()?" — "+c.title.trim():"");
+  const t=(c.title||"").trim();
+  if(t) return "Problem — "+t;
+  const q=(c.question||"").replace(/[*_`>#]/g,"").replace(/\s+/g," ").trim();
+  return "Problem"+(q?" — "+(q.length>50?q.slice(0,50).trim()+"…":q):"");
+}
+function componentName(c,u){ return ((u&&u.title)||"Unit").trim()+" · "+componentLabel(c); }
+
+function olxProblem(c,dn){
   const opts=c.options||[];
   let resp="";
   if(c.ptype==="multiple_choice")
@@ -1295,14 +1322,14 @@ function olxProblem(c){
   const q=mdToHtml(c.question||"");
   const sol=(c.explanation||"").trim()?'<solution><div class="detailed-solution"><p>Explanation</p>'+mdToHtml(c.explanation)+'</div></solution>':'';
   const hint=(c.hint||"").trim()?'<demandhint><hint>'+mdToHtml(c.hint)+'</hint></demandhint>':'';
-  return '<problem display_name="'+xmlEsc(c.title||"Problem")+'">\n'+q+'\n'+resp+'\n'+sol+hint+'\n</problem>\n';
+  return '<problem display_name="'+xmlEsc(dn||c.title||"Problem")+'">\n'+q+'\n'+resp+'\n'+sol+hint+'\n</problem>\n';
 }
-function olxVideo(c){
+function olxVideo(c,dn){
   const url=(c.url||"").trim();
   // Accept a full URL or a bare 11-char YouTube ID.
   const m=url.match(/(?:youtu\.be\/|[?&]v=|embed\/)([\w-]{11})/);
   const id = m ? m[1] : (/^[\w-]{11}$/.test(url) ? url : null);
-  let a='display_name="'+xmlEsc(c.title||"Video")+'" download_video="true"';
+  let a='display_name="'+xmlEsc(dn||c.title||"Video")+'" download_video="true"';
   if(id) a+=' youtube_id_1_0="'+xmlEsc(id)+'"';
   else if(url) a+=' html5_sources="'+xmlEsc(JSON.stringify([url]))+'"';
   if((c.transcript||"").trim()) a+=' transcripts="'+xmlEsc(JSON.stringify({en:c.transcript.trim()}))+'"';
@@ -1322,15 +1349,16 @@ function buildOlx(st){
       s.units.forEach(u=>{
         const vu="vert"+(++n.vt); vtRefs.push(vu); const kids=[];
         u.comps.forEach(c=>{
+          const dn=componentName(c,u);   // aligns with the library checklist
           if(c.kind==="TEXT"){
             const id="html"+(++n.h);
             P("html/"+id+".html",(c.title?('<h3>'+xmlText(c.title)+'</h3>\n'):'')+mdToHtml(c.body)+"\n");
-            P("html/"+id+".xml",'<html filename="'+id+'" display_name="'+xmlEsc(c.title||"Text")+'"/>\n');
+            P("html/"+id+".xml",'<html filename="'+id+'" display_name="'+xmlEsc(dn)+'"/>\n');
             kids.push(["html",id]);
           } else if(c.kind==="VIDEO"){
-            const id="video"+(++n.v); P("video/"+id+".xml",olxVideo(c)); kids.push(["video",id]);
+            const id="video"+(++n.v); P("video/"+id+".xml",olxVideo(c,dn)); kids.push(["video",id]);
           } else if(c.kind==="PROBLEM"){
-            const id="problem"+(++n.p); P("problem/"+id+".xml",olxProblem(c)); kids.push(["problem",id]);
+            const id="problem"+(++n.p); P("problem/"+id+".xml",olxProblem(c,dn)); kids.push(["problem",id]);
           }
         });
         P("vertical/"+vu+".xml",'<vertical display_name="'+xmlEsc(u.title||"Unit")+'">\n'+kids.map(k=>'  <'+k[0]+' url_name="'+k[1]+'"/>').join("\n")+"\n</vertical>\n");
@@ -1392,6 +1420,72 @@ async function exportOlx(){
   toast("Exported "+fname+" · remember to upload images/transcripts in Studio"+warn);
 }
 window.__olx=exportOlx;
+
+/* ---------- Library checklist (hidden, with #olx) -------------------- */
+// One row per component for the manual paste into a v2 Content Library:
+// one Library (the module), a Collection per chapter, and a stand-alone name.
+function buildChecklist(st){
+  const lib=(st.meta.DISPLAY_NAME||"Module").trim()||"Module";
+  const rows=[]; const counts={TEXT:0,VIDEO:0,PROBLEM:0}; const collections=new Set();
+  st.chapters.forEach(ch=>{
+    collections.add(ch.name);
+    ch.seqs.forEach(s=>s.units.forEach(u=>u.comps.forEach(c=>{
+      counts[c.kind]=(counts[c.kind]||0)+1;
+      rows.push({
+        library:lib, collection:ch.name,
+        location:ch.name+" › "+(s.title||"")+" › "+(u.title||""),
+        type:c.kind.charAt(0)+c.kind.slice(1).toLowerCase(),
+        name:componentName(c,u)
+      });
+    })));
+  });
+  return {lib, rows, counts, collections:[...collections]};
+}
+function checklistCsv(st){
+  const {rows}=buildChecklist(st);
+  const cell=v=>{v=v==null?"":(""+v); return /[",\n\r]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;};
+  const head=["Library","Collection","Location","Type","Suggested name","Pasted?","QA'd?","Owner","Notes"];
+  const lines=[head.join(",")];
+  rows.forEach(r=>lines.push([r.library,r.collection,r.location,r.type,r.name,"","","",""].map(cell).join(",")));
+  return lines.join("\r\n");
+}
+function showChecklist(){
+  serialize();                                     // sync meta from DOM
+  const {lib, rows, counts, collections}=buildChecklist(st0());
+  const slug=idSan(lib.toLowerCase().replace(/\s+/g,"-"),"module",80);
+  let back=document.getElementById('cl-back');
+  if(!back){ back=document.createElement('div'); back.id='cl-back'; back.className='cl-back'; document.body.appendChild(back);
+    back.addEventListener('click',e=>{ if(e.target===back) back.remove(); }); }
+  back.innerHTML="";
+  const card=el('div','cl-card'); back.appendChild(card);
+  const head=el('div','cl-head');
+  head.innerHTML='<div><b>Library checklist</b> — paste targets for a v2 Content Library</div>';
+  const x=el('button','btn','✕'); x.style.cssText="padding:4px 10px"; x.onclick=()=>back.remove(); head.appendChild(x);
+  card.appendChild(head);
+  const sum=el('div','cl-sum');
+  sum.textContent='Library: “'+lib+'”  ·  '+collections.length+' collections (one per chapter)  ·  '+rows.length+' components ('+(counts.TEXT||0)+' text · '+(counts.VIDEO||0)+' video · '+(counts.PROBLEM||0)+' problem)';
+  card.appendChild(sum);
+  // table
+  const wrap=el('div','cl-tablewrap'); const tbl=document.createElement('table'); tbl.className='cl-table';
+  const thead=document.createElement('thead'); thead.innerHTML='<tr><th>#</th><th>Collection</th><th>Type</th><th>Suggested name</th><th>Location</th></tr>'; tbl.appendChild(thead);
+  const tb=document.createElement('tbody');
+  rows.forEach((r,i)=>{ const tr=document.createElement('tr');
+    [String(i+1),r.collection,r.type,r.name,r.location].forEach((v,ci)=>{ const td=document.createElement('td'); td.textContent=v; if(ci===0)td.className='cl-n'; tr.appendChild(td); });
+    tb.appendChild(tr); });
+  tbl.appendChild(tb); wrap.appendChild(tbl); card.appendChild(wrap);
+  // footer
+  const foot=el('div','cl-foot');
+  const dl=el('button','btn-primary','Download CSV');
+  dl.onclick=()=>{ const blob=new Blob([checklistCsv(st0())],{type:"text/csv"}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=slug+"_library_checklist.csv"; a.click(); toast("Downloaded "+a.download); };
+  const cp=el('button','btn','Copy table');
+  cp.onclick=()=>{ const tsv=["#\tCollection\tType\tSuggested name\tLocation",...rows.map((r,i)=>(i+1)+"\t"+r.collection+"\t"+r.type+"\t"+r.name+"\t"+r.location)].join("\n");
+    const ok=()=>{cp.textContent="Copied ✓";setTimeout(()=>cp.textContent="Copy table",1400);};
+    if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(tsv).then(ok).catch(()=>toast("Couldn't copy — use Download CSV.")); else toast("Couldn't copy — use Download CSV."); };
+  foot.appendChild(cp); foot.appendChild(dl);
+  card.appendChild(foot);
+}
+function st0(){ return state; }   // small indirection so the slice-for-tests stays simple
+window.__checklist=showChecklist;
 
 /* ---------- Optional in-page self-test -------------------------------- */
 // Runs the round-trip / invariant checks against the live code. Opt-in only:
@@ -1458,9 +1552,10 @@ render();
 syncOutlineLabel();
 appReady=true;   // edits from here on mark the document dirty
 
-// Hidden edX export: revealed only when the URL contains #olx (or ?olx).
+// Hidden edX export + library checklist: revealed only when the URL contains #olx.
 document.getElementById('olxExport').onclick=exportOlx;
-function syncOlx(){ if((location.hash+location.search).indexOf('olx')>=0) document.getElementById('olxExport').style.display=''; }
+document.getElementById('checklistBtn').onclick=showChecklist;
+function syncOlx(){ if((location.hash+location.search).indexOf('olx')>=0){ document.getElementById('olxExport').style.display=''; document.getElementById('checklistBtn').style.display=''; } }
 window.addEventListener('hashchange',syncOlx); syncOlx();
 
 if((location.hash+location.search).indexOf('selftest')>=0) runSelfTest();
