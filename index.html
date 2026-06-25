@@ -898,8 +898,10 @@ function validate(){
         if(c.ptype==="checkboxes" && correct===0) add("Checkboxes: no answer marked correct");
         if(c.ptype!=="checkboxes" && correct!==1) add("Choice problem needs exactly one correct answer");
         if(blank) add("Problem has a blank option");
-      } else if(!(c.answer||"").trim()){
-        add("Problem has no answer");
+      } else {
+        const ans=(c.answer||"").trim();
+        if(!ans) add("Problem has no answer");
+        else if(c.ptype==="numerical" && !/\d/.test(ans)) add("Numerical answer isn't a number");
       }
     }
     });
@@ -1252,14 +1254,15 @@ window.addEventListener('beforeunload',e=>{ if(dirty){ e.preventDefault(); e.ret
 // preview DOM. Assets (images, .srt) are referenced, not bundled (see toast).
 function xmlEsc(s){return (s==null?"":(""+s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function xmlText(s){return (s==null?"":(""+s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-function idSan(s,fb){const t=(s==null?"":(""+s)).trim().replace(/[^A-Za-z0-9_.\-]+/g,'_').replace(/^[_.]+|_+$/g,'');return t||fb;}
+function idSan(s,fb,max){const t=(s==null?"":(""+s)).trim().replace(/[^A-Za-z0-9_.\-]+/g,'_').replace(/^[_.]+|_+$/g,'').slice(0,max||64);return t||fb;}
 
 // Minimal markdown → HTML for TEXT bodies / problem prose. Matches the author
 // hints: *bold*, _italic_, [text](url), [[image: file | alt]], - bullets.
 function mdInline(s){
-  s=xmlText(s);
-  s=s.replace(/\[\[image:\s*([^\|\]]+?)(?:\s*\|\s*([^\]]*))?\]\]/g,(m,f,alt)=>'<img src="/static/'+xmlEsc(f.trim())+'" alt="'+xmlEsc((alt||'').trim())+'"/>');
-  s=s.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g,(m,t,u)=>'<a href="'+xmlEsc(u)+'">'+t+'</a>');
+  s=xmlText(s);                       // escapes & < > once
+  const aq=v=>(v==null?"":(""+v)).replace(/"/g,'&quot;');  // s is already escaped — only quotes remain for attributes
+  s=s.replace(/\[\[image:\s*([^\|\]]+?)(?:\s*\|\s*([^\]]*))?\]\]/g,(m,f,alt)=>'<img src="/static/'+aq(f.trim())+'" alt="'+aq((alt||'').trim())+'"/>');
+  s=s.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g,(m,t,u)=>'<a href="'+aq(u)+'">'+t+'</a>');
   s=s.replace(/\*([^*\n]+)\*/g,'<strong>$1</strong>');
   s=s.replace(/_([^_\n]+)_/g,'<em>$1</em>');
   return s;
@@ -1309,7 +1312,7 @@ function olxVideo(c){
 }
 function buildOlx(st){
   const meta=st.meta;
-  const org=idSan(meta.ORG,"ORG"), course=idSan(meta.COURSE_ID,"course"), run=idSan(meta.RUN,"run");
+  const org=idSan(meta.ORG,"ORG",60), course=idSan(meta.COURSE_ID,"course",60), run=idSan(meta.RUN,"run",60);
   const root=course;                       // wrapper dir so Studio's import finds course.xml
   const files={}; const P=(p,c)=>files[root+"/"+p]=c;
   const n={ch:0,seq:0,vt:0,h:0,v:0,p:0};
@@ -1334,7 +1337,8 @@ function buildOlx(st){
         });
         P("vertical/"+vu+".xml",'<vertical display_name="'+xmlEsc(u.title||"Unit")+'">\n'+kids.map(k=>'  <'+k[0]+' url_name="'+k[1]+'"/>').join("\n")+"\n</vertical>\n");
       });
-      P("sequential/"+su+".xml",'<sequential display_name="'+xmlEsc(s.title||"Subsection")+'">\n'+vtRefs.map(v=>'  <vertical url_name="'+v+'"/>').join("\n")+"\n</sequential>\n");
+      const grd = ch.kind==="assignments" ? ' graded="true" format="Homework"' : '';   // assignments count toward the grade
+      P("sequential/"+su+".xml",'<sequential display_name="'+xmlEsc(s.title||"Subsection")+'"'+grd+'>\n'+vtRefs.map(v=>'  <vertical url_name="'+v+'"/>').join("\n")+"\n</sequential>\n");
     });
     P("chapter/"+cu+".xml",'<chapter display_name="'+xmlEsc(ch.name)+'">\n'+seqRefs.map(s=>'  <sequential url_name="'+s+'"/>').join("\n")+"\n</chapter>\n");
   });
@@ -1353,6 +1357,7 @@ function tarball(files){
     const put=(str,off,len)=>{const b=enc.encode(str);for(let i=0;i<b.length&&i<len;i++)h[off+i]=b[i];};
     let name=path, prefix="";
     if(name.length>100){const idx=name.lastIndexOf("/",100);if(idx>0){prefix=name.slice(0,idx);name=name.slice(idx+1);}}
+    if(name.length>100||prefix.length>155) throw new Error("path too long for tar: "+path);  // never truncate silently
     put(name,0,100); put("0000644",100,7); put("0000000",108,7); put("0000000",116,7);
     put(octal(data.length,12),124,12); put(octal(0,12),136,12);
     for(let i=148;i<156;i++)h[i]=0x20;            // checksum field = spaces
@@ -1376,12 +1381,14 @@ async function gzipBytes(bytes){
 async function exportOlx(){
   serialize();                                     // sync meta from DOM into state
   const issues=validate();
-  const {files,name}=buildOlx(state);
-  const tar=tarball(files);
-  let blob, fname=name;
-  const gz=await gzipBytes(tar);
-  if(gz){ blob=new Blob([gz],{type:"application/gzip"}); }
-  else { blob=new Blob([tar],{type:"application/x-tar"}); fname=name.replace(/\.gz$/,""); toast("This browser can't gzip — downloaded a .tar; gzip it before importing."); }
+  let blob, fname;
+  try{
+    const {files,name}=buildOlx(state); fname=name;
+    const tar=tarball(files);
+    const gz=await gzipBytes(tar);
+    if(gz){ blob=new Blob([gz],{type:"application/gzip"}); }
+    else { blob=new Blob([tar],{type:"application/x-tar"}); fname=name.replace(/\.gz$/,""); toast("This browser can't gzip — downloaded a .tar; gzip it before importing."); }
+  }catch(e){ toast("Couldn't build the edX archive: "+e.message); return; }
   const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=fname; a.click();
   const warn=issues.length?(" · "+issues.length+" validation issue"+(issues.length>1?"s":"")+" — open preview"):"";
   toast("Exported "+fname+" · remember to upload images/transcripts in Studio"+warn);
