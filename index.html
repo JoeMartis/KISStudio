@@ -204,6 +204,30 @@
   .issues .imsg::before{content:"▸";color:#f0a868;flex-shrink:0}
   .issues .where{display:block;color:#6b7d90;font-size:10.5px;margin:1px 0 0 14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
+  /* Preview theme toggle */
+  .pv-right{display:flex;align-items:center;gap:10px}
+  .pv-theme{background:none;border:none;cursor:pointer;font-size:13px;line-height:1;padding:3px 5px;border-radius:6px;opacity:.85}
+  .pv-theme:hover{opacity:1;background:rgba(127,127,127,.18)}
+
+  /* Light preview (default) — overrides the dark base above */
+  .preview-card.light{background:var(--card);border:1px solid var(--line)}
+  .preview-card.light .preview-bar{background:#f4f7fb;border-bottom:1px solid var(--line)}
+  .preview-card.light .preview-bar .ttl{color:var(--ink-soft)}
+  .preview-card.light .preview{color:var(--ink)}
+  .preview-card.light .preview .k{color:#0f7a52}
+  .preview-card.light .preview .v{color:var(--ink)}
+  .preview-card.light .preview .h{color:var(--navy)}
+  .preview-card.light .preview .rule{border-top-color:var(--line)}
+  .preview-card.light .preview .ln.empty .k,.preview-card.light .preview .ln.empty .v{color:#9aa7b4}
+  .preview-card.light .preview-foot{border-top:1px solid var(--line);background:#f9fbfd}
+  .preview-card.light .issues{background:#f8fafc;border-top:1px solid var(--line);color:var(--ink)}
+  .preview-card.light .issues .ok{color:var(--good)}
+  .preview-card.light .issues .ihead{color:var(--ink-soft)}
+  .preview-card.light .issues .imsg{color:#b4500f}
+  .preview-card.light .issues .imsg::before{color:var(--accent)}
+  .preview-card.light .issues .where{color:#8a98a6}
+  .preview-card.light .issues .irow:hover{background:#eef2f7}
+
   .legend{font-size:12px;color:var(--ink-soft);margin-top:14px;background:var(--card);border:1px solid var(--line);border-radius:9px;padding:12px 14px}
   .legend b{color:var(--ink)}
   .legend .row{display:flex;gap:8px;margin-top:6px;align-items:flex-start}
@@ -272,10 +296,13 @@
 
     <!-- Preview -->
     <aside class="preview-col">
-      <div class="preview-card">
+      <div class="preview-card light">
         <div class="preview-bar">
           <span class="ttl">module_authoring_template.txt</span>
-          <span class="dot"><i style="background:#ff5f56"></i><i style="background:#ffbd2e"></i><i style="background:#27c93f"></i></span>
+          <span class="pv-right">
+            <button id="themeToggle" class="pv-theme" type="button" aria-label="Switch to dark">🌙</button>
+            <span class="dot"><i style="background:#ff5f56"></i><i style="background:#ffbd2e"></i><i style="background:#27c93f"></i></span>
+          </span>
         </div>
         <div class="preview" id="preview"></div>
         <div class="issues" id="issues" hidden></div>
@@ -1174,6 +1201,18 @@ function setOutline(show){
 }
 document.getElementById('outlineToggle').onclick=()=>
   setOutline(document.getElementById('grid').classList.contains('outline-hidden'));
+// Preview colour theme (light by default, remembered across sessions).
+function setPreviewTheme(theme){
+  const card=document.querySelector('.preview-card'); if(!card)return;
+  const light=theme!=='dark';
+  card.classList.toggle('light',light);
+  const b=document.getElementById('themeToggle');
+  if(b){ b.textContent=light?"🌙":"☀️"; b.title=light?"Switch to dark":"Switch to light"; b.setAttribute('aria-label',b.title); }
+  try{ localStorage.setItem('uai_preview_theme',light?'light':'dark'); }catch(_){}
+}
+document.getElementById('themeToggle').onclick=()=>
+  setPreviewTheme(document.querySelector('.preview-card').classList.contains('light')?'dark':'light');
+(function(){ let th='light'; try{ th=localStorage.getItem('uai_preview_theme')||'light'; }catch(_){}; setPreviewTheme(th); })();
 document.getElementById('importBtn').onclick=()=>document.getElementById('fileInput').click();
 document.getElementById('fileInput').onchange=e=>{
   const file=e.target.files[0]; if(!file) return;
