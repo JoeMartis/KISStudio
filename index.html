@@ -79,7 +79,7 @@
     .grid,.grid.outline-hidden,.grid.preview-hidden,.grid.outline-hidden.preview-hidden{grid-template-columns:1fr}
     .preview-col,.outline-col{position:static!important}
   }
-  .chapter,.seq,.unit{scroll-margin-top:84px}
+  .chapter,.seq,.unit,.comp{scroll-margin-top:84px}
 
   /* Outline (linked) */
   .outline-col{position:sticky;top:88px}
@@ -90,6 +90,7 @@
   .ol-ch{font-weight:700;color:var(--navy);font-size:13px;padding:7px 8px 4px}
   .ol-seq{color:var(--ink);font-size:12.5px;padding:3px 8px 3px 18px}
   .ol-unit{color:var(--ink-soft);font-size:12px;padding:2px 8px 2px 30px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ol-comp{color:var(--ink-soft);font-size:11.5px;padding:1px 8px 1px 42px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:.92}
   #outline button:hover{background:var(--blue-soft);color:var(--ink)}
   .flash{animation:flashbg 1.3s ease}
   @keyframes flashbg{0%,30%{background:var(--accent-soft)}100%{background:transparent}}
@@ -384,7 +385,14 @@ function renderOutline(){
     nav.appendChild(olBtn('ol-ch',ch.name,'[data-chapter="'+ch.kind+'"]'));
     ch.seqs.forEach(s=>{
       nav.appendChild(olBtn('ol-seq',s.title||'(untitled subsection)','[data-seq="'+s.id+'"]'));
-      s.units.forEach(u=>nav.appendChild(olBtn('ol-unit',u.title||'(untitled unit)','[data-unit="'+u.id+'"]')));
+      s.units.forEach(u=>{
+        nav.appendChild(olBtn('ol-unit',u.title||'(untitled unit)','[data-unit="'+u.id+'"]'));
+        u.comps.forEach(c=>{
+          const k={TEXT:'Text',VIDEO:'Video',PROBLEM:'Problem'}[c.kind]||c.kind;
+          const label=(c.title&&c.title.trim())? k+' · '+c.title.trim() : k;
+          nav.appendChild(olBtn('ol-comp',label,'[data-comp="'+c.id+'"]'));
+        });
+      });
     });
   });
 }
@@ -717,7 +725,7 @@ function fieldText(label,val,onset,area=false,ph="",mono=false,key=null){
   const inp=area?document.createElement('textarea'):document.createElement('input');
   inp.id=id; if(key)inp.dataset.k=key;
   inp.value=val; if(ph)inp.placeholder=ph; if(mono)inp.className="mono-input";
-  inp.oninput=e=>{onset(e.target.value);markDirty();renderPreview()};
+  inp.oninput=e=>{onset(e.target.value);markDirty();renderPreview();renderOutline()};
   f.appendChild(inp);
   return f;
 }
