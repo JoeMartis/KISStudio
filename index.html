@@ -184,6 +184,7 @@
   .preview .ln.blank{height:.5em}
   .preview .k{color:#8fe3b0}
   .preview .v{color:#dce6f0}
+  .preview .ln.empty .k,.preview .ln.empty .v{color:#566879}   /* unfilled fields recede */
   .preview .h{display:block;color:#f6b87a;font-weight:700;letter-spacing:.02em;margin-top:4px}
   .preview .rule{display:block;border-top:1px solid #2c3d4f;margin:7px 0}
   .preview .fence{color:#6b7d90;font-style:italic}
@@ -191,11 +192,17 @@
   .preview-foot button{flex:1}
   .copy-ok{color:var(--good)!important;border-color:var(--good)!important}
 
-  .issues{background:#0d161f;border-top:1px solid #243240;padding:10px 14px;font-family:var(--mono);font-size:11px;color:#f0a868;max-height:22vh;overflow:auto}
-  .issues .ok{color:#7dd3a8}
-  .issues .ihead{display:block;margin-bottom:6px;color:#9fb4c9;letter-spacing:.03em;text-transform:uppercase;font-size:10px}
-  .issues .irow{display:flex;gap:7px;padding:2px 0;line-height:1.5}
-  .issues .irow .where{color:#5e7081;flex-shrink:0}
+  .issues{background:#0d161f;border-top:1px solid #243240;padding:10px 12px 12px;font-family:var(--sans);font-size:12px;color:#cdd9e5;max-height:30vh;overflow:auto}
+  .issues .ok{color:#7dd3a8;font-family:var(--mono);font-size:11.5px}
+  .issues .ihead{display:block;margin-bottom:7px;color:#9fb4c9;letter-spacing:.04em;text-transform:uppercase;font-size:10px;font-weight:700}
+  .ilist{display:flex;flex-direction:column;gap:1px}
+  .issues .irow{display:block;width:100%;text-align:left;background:none;border:none;border-radius:7px;padding:6px 8px;cursor:pointer}
+  .issues .irow:hover{background:#172634}
+  .issues .irow:disabled{cursor:default;opacity:.9}
+  .issues .irow:focus-visible{outline:2px solid var(--blue);outline-offset:-2px}
+  .issues .imsg{display:flex;align-items:flex-start;gap:7px;color:#f3b787;line-height:1.4}
+  .issues .imsg::before{content:"▸";color:#f0a868;flex-shrink:0}
+  .issues .where{display:block;color:#6b7d90;font-size:10.5px;margin:1px 0 0 14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
   .legend{font-size:12px;color:var(--ink-soft);margin-top:14px;background:var(--card);border:1px solid var(--line);border-radius:9px;padding:12px 14px}
   .legend b{color:var(--ink)}
@@ -817,12 +824,15 @@ function renderPreview(){
     // comes from serialize(), so this never affects what's downloaded/copied.
     const html=txt.split('\n').map(line=>{
       if(/^={5,}$/.test(line)||/^-{5,}$/.test(line)) return '<div class="rule"></div>';
+      if(line==="<<<") return '';                              // block terminator: structural, hide it
       if(line==="") return '<div class="ln blank"></div>';
-      if(line==="<<<") return '<div class="ln"><span class="fence">⌟ end of block</span></div>';
       if(/^(CHAPTER:|SEQUENTIAL:|>>> UNIT:|>>> COMPONENT:|MODULE$|END OF MODULE$|MODULE AUTHORING)/.test(line))
         return '<div class="ln"><span class="h">'+esc(line)+'</span></div>';
-      if(/^[A-Z_]+:/.test(line))
-        return '<div class="ln"><span class="k">'+esc(line.split(':')[0])+':</span><span class="v">'+esc(line.slice(line.indexOf(':')+1))+'</span></div>';
+      const m=line.match(/^([A-Z_]+):(.*)$/);
+      if(m){
+        const empty = m[2].trim()===""? " empty":"";   // dim fields the author hasn't filled in
+        return '<div class="ln'+empty+'"><span class="k">'+esc(m[1])+':</span><span class="v">'+esc(m[2])+'</span></div>';
+      }
       return '<div class="ln">'+esc(line)+'</div>';
     }).join('');
     document.getElementById('preview').innerHTML=html;
@@ -833,24 +843,24 @@ function renderPreview(){
 /* ---------- Validation: catch what would confuse the converter -------- */
 function validate(){
   const issues=[];
-  if(!state.meta.DISPLAY_NAME.trim()) issues.push({where:"Module",msg:"Missing display name"});
-  if(!state.meta.COURSE_ID.trim())    issues.push({where:"Module",msg:"Missing course ID"});
+  if(!state.meta.DISPLAY_NAME.trim()) issues.push({where:"Module details",msg:"Missing display name",sel:".meta-card"});
+  if(!state.meta.COURSE_ID.trim())    issues.push({where:"Module details",msg:"Missing course ID",sel:".meta-card"});
   state.chapters.forEach(ch=>ch.seqs.forEach(s=>s.units.forEach(u=>u.comps.forEach(c=>{
-    const at=s.title+" › "+(u.title||"untitled");
-    if(c.kind==="VIDEO" && !(c.url||"").trim())
-      issues.push({where:at,msg:"Video has no URL"});
-    if(c.kind==="TEXT" && !(c.body||"").trim() && !(c.title||"").trim())
-      issues.push({where:at,msg:"Empty text component"});
+    const at=ch.name+" › "+(u.title||"untitled unit");
+    const sel='[data-comp="'+c.id+'"]';
+    const add=msg=>issues.push({where:at,msg,sel});
+    if(c.kind==="VIDEO" && !(c.url||"").trim()) add("Video has no URL");
+    if(c.kind==="TEXT" && !(c.body||"").trim() && !(c.title||"").trim()) add("Empty text component");
     if(c.kind==="PROBLEM"){
-      if(!(c.question||"").trim()) issues.push({where:at,msg:"Problem has no question"});
+      if(!(c.question||"").trim()) add("Problem has no question");
       if(["multiple_choice","checkboxes","dropdown"].includes(c.ptype)){
         const correct=c.options.filter(o=>o.correct).length;
         const blank=c.options.some(o=>!o.t.trim());
-        if(c.ptype==="checkboxes" && correct===0) issues.push({where:at,msg:"Checkboxes: no answer marked correct"});
-        if(c.ptype!=="checkboxes" && correct!==1) issues.push({where:at,msg:"Choice problem needs exactly one correct answer"});
-        if(blank) issues.push({where:at,msg:"Problem has a blank option"});
+        if(c.ptype==="checkboxes" && correct===0) add("Checkboxes: no answer marked correct");
+        if(c.ptype!=="checkboxes" && correct!==1) add("Choice problem needs exactly one correct answer");
+        if(blank) add("Problem has a blank option");
       } else if(!(c.answer||"").trim()){
-        issues.push({where:at,msg:"Problem has no answer"});
+        add("Problem has no answer");
       }
     }
   }))));
@@ -873,16 +883,24 @@ function renderIssues(){
   const box=document.getElementById('issues');
   const issues=validate();
   lastIssueCount=issues.length;
+  box.hidden=false; box.innerHTML="";
   if(!issues.length){
-    box.hidden=false;
     box.innerHTML='<span class="ok">✓ No issues — ready to download.</span>';
     syncToggleLabel();
     return;
   }
-  const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  box.hidden=false;
-  box.innerHTML='<span class="ihead">'+issues.length+' issue'+(issues.length>1?'s':'')+' to fix before handing off</span>'+
-    issues.map(it=>'<div class="irow"><span class="where">'+esc(it.where)+'</span><span>'+esc(it.msg)+'</span></div>').join('');
+  const head=el('div','ihead',issues.length+' issue'+(issues.length>1?'s':'')+' to fix before handing off');
+  box.appendChild(head);
+  const list=el('div','ilist');
+  issues.forEach(it=>{
+    const row=document.createElement('button'); row.type="button"; row.className="irow";
+    if(it.sel){ row.title="Jump to this item"; row.onclick=()=>jumpTo(it.sel); } else { row.disabled=true; }
+    const msg=el('span','imsg'); msg.textContent=it.msg;
+    const where=el('span','where'); where.textContent=it.where; where.title=it.where;
+    row.appendChild(msg); row.appendChild(where);
+    list.appendChild(row);
+  });
+  box.appendChild(list);
   syncToggleLabel();
 }
 
