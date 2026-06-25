@@ -1002,7 +1002,67 @@ document.getElementById('resetBtn').onclick=()=>{
 document.querySelectorAll('[data-meta]').forEach(i=>i.oninput=()=>{state.meta[i.dataset.meta]=i.value;renderPreview()});
 function bindMeta(){document.querySelectorAll('[data-meta]').forEach(i=>i.value=state.meta[i.dataset.meta]||"")}
 
+/* ---------- Optional in-page self-test -------------------------------- */
+// Runs the round-trip / invariant checks against the live code. Opt-in only:
+// load the page with #selftest in the URL, or call __selftest() in the console.
+// It saves and restores the current document, so it never clobbers real work.
+function runSelfTest(){
+  const results=[]; const check=(name,cond)=>results.push({name,ok:!!cond});
+  const savedState=state, savedUid=uid;
+  // build a synthetic doc, round-trip it, return the reparsed state
+  const rt=(mut)=>{ uid=1; state=seedState(); mut(state);
+    const t1=serialize(); const s2=stateFromParsed(parseTemplate(t1)); state=s2;
+    return {t1,t2:serialize(),s2}; };
+  const prob=s=>s.chapters[1].seqs[0].units[1].comps[2];   // Lecture 1 › L1.1 › PROBLEM
+  const text=s=>s.chapters[0].seqs[0].units[0].comps[0];   // Introduction › TEXT
+  const RULE="=".repeat(80);
+  try{
+    check("round-trip: default skeleton is stable", rt(()=>{}).t1===rt(()=>{}).t2);
+
+    const body="l1\nNOTE: x\n"+RULE+"\n- (x) trap\n<<<\n>>> UNIT: fake";
+    let r=rt(s=>{text(s).body=body;});
+    check("round-trip: adversarial body is byte-stable", r.t1===r.t2);
+    check("round-trip: adversarial body content is exact", text(r.s2).body===body);
+
+    const q="Q line 1\n- (x) looks like an option\nQ line 3";
+    r=rt(s=>{prob(s).question=q;});
+    check("multi-line question is byte-stable", r.t1===r.t2);
+    check("multi-line question content is exact", prob(r.s2).question===q);
+    check("multi-line question creates no phantom option", prob(r.s2).options.length===3);
+
+    const ex="because\n>>> COMPONENT: TEXT\n"+RULE+"\ndone";
+    r=rt(s=>{prob(s).explanation=ex;});
+    check("multi-line explanation content is exact", prob(r.s2).explanation===ex);
+
+    let threw=false; try{ parseTemplate(RULE); }catch(e){threw=true;}
+    check("truncated file does not throw on import", !threw);
+
+    check("numbering avoids duplicates after a delete",
+      nextNum([{t:"Lecture 1:"},{t:"Lecture 3:"}],x=>x.t,/Lecture\s+(\d+)/)===4);
+
+    uid=1; state=seedState();
+    check("validation flags a blank skeleton", validate().length>0);
+  }catch(err){ check("harness ran without error ("+err.message+")", false); }
+  finally{ state=savedState; uid=savedUid; render(); }
+
+  const passed=results.filter(r=>r.ok).length, total=results.length;
+  results.forEach(r=>console[r.ok?'log':'error']((r.ok?'✓':'✗')+' '+r.name));
+  console.log('Self-test: '+passed+'/'+total+' passed');
+  const ok=passed===total, esc=s=>s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+  let box=document.getElementById('selftest');
+  if(!box){box=document.createElement('div');box.id='selftest';document.body.appendChild(box);}
+  box.style.cssText="position:fixed;right:16px;bottom:16px;z-index:200;max-width:380px;background:var(--card);border:1px solid var(--line);border-left:4px solid "+(ok?"var(--good)":"#b3261e")+";border-radius:10px;box-shadow:var(--shadow);padding:12px 14px;font-size:12.5px;max-height:60vh;overflow:auto";
+  box.innerHTML='<div style="font-weight:700;margin-bottom:6px;color:'+(ok?'var(--good)':'#b3261e')+'">Self-test: '+passed+'/'+total+' passed</div>'+
+    results.map(r=>'<div style="display:flex;gap:6px;padding:1px 0"><span style="color:'+(r.ok?'var(--good)':'#b3261e')+'">'+(r.ok?'✓':'✗')+'</span><span>'+esc(r.name)+'</span></div>').join('')+
+    '<button id="selftestClose" class="btn" style="margin-top:8px;width:100%">Close</button>';
+  document.getElementById('selftestClose').onclick=()=>box.remove();
+  return ok;
+}
+window.__selftest=runSelfTest;
+
 render();
+
+if((location.hash+location.search).indexOf('selftest')>=0) runSelfTest();
 </script>
 </body>
 </html>
