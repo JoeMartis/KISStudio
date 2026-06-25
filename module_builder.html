@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UAI Module Builder</title>
+<style>
+  :root{
+    --ink:#15202b;        /* near-black slate */
+    --ink-soft:#48576a;
+    --line:#dce3ec;
+    --line-soft:#eaeff5;
+    --paper:#f6f8fb;
+    --card:#ffffff;
+    --navy:#1f3864;
+    --blue:#2e75b6;
+    --blue-soft:#edf2f9;
+    --accent:#c2410c;     /* burnt orange — the one warm signal */
+    --accent-soft:#fdf0e8;
+    --good:#1f7a4d;
+    --warn:#9a6700;
+    --mono:"SFMono-Regular",ui-monospace,"Cascadia Mono","Roboto Mono",Menlo,Consolas,monospace;
+    --sans:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --radius:10px;
+    --shadow:0 1px 2px rgba(21,32,43,.04),0 4px 16px rgba(21,32,43,.06);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    font-family:var(--sans);
+    color:var(--ink);
+    background:var(--paper);
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1180px;margin:0 auto;padding:0 24px}
+
+  /* Masthead */
+  header.masthead{
+    border-bottom:1px solid var(--line);
+    background:var(--card);
+    position:sticky;top:0;z-index:50;
+  }
+  .masthead .wrap{display:flex;align-items:center;justify-content:space-between;height:64px;gap:16px}
+  .brand{display:flex;align-items:baseline;gap:12px;min-width:0}
+  .brand .mark{
+    font-family:var(--mono);font-weight:600;font-size:13px;letter-spacing:.02em;
+    color:#fff;background:var(--navy);padding:5px 9px;border-radius:6px;white-space:nowrap;
+  }
+  .brand h1{font-size:16px;font-weight:600;margin:0;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .brand .sub{font-size:13px;color:var(--ink-soft);font-weight:400}
+  .actions{display:flex;gap:10px;align-items:center;flex-shrink:0}
+
+  button{font-family:var(--sans);cursor:pointer;border:1px solid transparent;border-radius:8px;font-size:13.5px;font-weight:500;transition:all .12s ease}
+  .btn{padding:8px 14px;background:var(--card);border-color:var(--line);color:var(--ink)}
+  .btn:hover{border-color:#c3cedb;background:#fafcff}
+  .btn-primary{background:var(--navy);color:#fff;border-color:var(--navy);padding:8px 16px}
+  .btn-primary:hover{background:#162a4d}
+  .btn-ghost{background:transparent;border-color:transparent;color:var(--blue);padding:7px 10px}
+  .btn-ghost:hover{background:var(--blue-soft)}
+  .btn-add{
+    background:var(--accent-soft);color:var(--accent);border:1px dashed #e8b89c;
+    padding:9px 14px;font-weight:600;width:100%;border-radius:8px;
+  }
+  .btn-add:hover{background:#fbe6d8;border-style:solid}
+  .btn-icon{padding:5px 8px;font-size:12px;color:var(--ink-soft);border-color:transparent;background:transparent}
+  .btn-icon:hover{background:var(--line-soft);color:var(--ink)}
+  .btn-danger:hover{background:#fdecec;color:#b3261e}
+
+  /* Layout */
+  main{padding:28px 0 80px}
+  .grid{display:grid;grid-template-columns:1fr 380px;gap:28px;align-items:start}
+  @media(max-width:980px){.grid{grid-template-columns:1fr}.preview-col{position:static!important}}
+
+  /* Module meta card */
+  .meta-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px 22px;margin-bottom:24px}
+  .meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px 18px}
+  .field{display:flex;flex-direction:column;gap:5px}
+  .field.full{grid-column:1/-1}
+  label.lbl{font-size:11.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-soft)}
+  input,select,textarea{
+    font-family:var(--sans);font-size:14px;color:var(--ink);
+    border:1px solid var(--line);border-radius:7px;padding:8px 10px;background:#fff;width:100%;
+    transition:border-color .12s,box-shadow .12s;
+  }
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-soft)}
+  textarea{resize:vertical;min-height:64px;line-height:1.55}
+  .mono-input{font-family:var(--mono);font-size:13px}
+
+  /* Chapter */
+  .chapter{margin-bottom:18px;border:1px solid var(--line);border-radius:var(--radius);background:var(--card);box-shadow:var(--shadow);overflow:hidden}
+  .chapter-head{
+    display:flex;align-items:center;gap:12px;padding:14px 18px;
+    background:linear-gradient(180deg,#fbfcfe,#f4f7fb);border-bottom:1px solid var(--line);
+  }
+  .chapter-head .lock{font-size:11px;color:var(--ink-soft);font-family:var(--mono)}
+  .chapter-title{font-size:16px;font-weight:700;color:var(--navy);letter-spacing:-.01em}
+  .chapter-kind{
+    font-size:10.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;
+    color:var(--ink-soft);background:#fff;border:1px solid var(--line);padding:3px 7px;border-radius:5px;
+  }
+  .chapter-body{padding:14px 18px 18px}
+  .chapter-hint{font-size:12.5px;color:var(--ink-soft);margin:0 0 12px;font-style:italic}
+
+  /* Sequential (subsection) */
+  .seq{border:1px solid var(--line);border-radius:9px;margin-bottom:12px;background:#fcfdfe}
+  .seq-head{display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--line-soft)}
+  .seq-head .seq-prefix{font-family:var(--mono);font-size:11px;color:var(--blue);font-weight:600}
+  .seq-head input{flex:1;font-weight:600;font-size:14px;border-color:transparent;background:transparent;padding:5px 6px}
+  .seq-head input:focus{background:#fff;border-color:var(--blue)}
+  .seq-body{padding:10px 12px}
+
+  /* Unit */
+  .unit{border:1px solid var(--line-soft);border-radius:8px;margin-bottom:10px;background:#fff}
+  .unit-head{display:flex;align-items:center;gap:8px;padding:8px 10px}
+  .unit-badge{font-family:var(--mono);font-size:10px;font-weight:600;color:#fff;background:var(--blue);padding:2px 6px;border-radius:4px;white-space:nowrap}
+  .unit-badge.fixed{background:var(--ink-soft)}
+  .unit-head input{flex:1;font-size:13.5px;font-weight:500;border-color:transparent;padding:4px 6px}
+  .unit-head input:focus{border-color:var(--blue)}
+  .unit-body{padding:0 10px 10px}
+
+  /* Component */
+  .comp{border:1px solid var(--line-soft);border-radius:7px;margin-bottom:8px;background:var(--paper);overflow:hidden}
+  .comp-head{display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--blue-soft);border-bottom:1px solid #dde8f4}
+  .comp-diamond{color:var(--navy);font-size:11px}
+  .comp-kind{font-size:11px;font-weight:700;letter-spacing:.05em;color:var(--navy);text-transform:uppercase}
+  .comp-body{padding:10px;display:flex;flex-direction:column;gap:9px}
+  .comp-row{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+
+  /* options editor */
+  .opts{display:flex;flex-direction:column;gap:6px}
+  .opt{display:flex;align-items:center;gap:8px}
+  .opt input[type=text]{flex:1;font-size:13px}
+  .opt .marker{width:34px;height:32px;display:flex;align-items:center;justify-content:center;border:1px solid var(--line);border-radius:6px;cursor:pointer;background:#fff;color:var(--ink-soft);font-family:var(--mono);font-size:13px}
+  .opt .marker.on{background:var(--good);border-color:var(--good);color:#fff}
+  .opt-add{align-self:flex-start;font-size:12px;color:var(--blue);background:transparent;border:none;padding:4px 0;font-weight:600}
+
+  .row-actions{margin-left:auto;display:flex;gap:2px}
+  .add-row{display:flex;gap:8px;margin-top:6px}
+  .add-row .btn-ghost{font-size:12.5px;border:1px dashed var(--line);border-radius:7px;flex:1}
+  .add-row .btn-ghost:hover{border-color:var(--blue);background:var(--blue-soft)}
+
+  /* Preview column */
+  .preview-col{position:sticky;top:88px}
+  .preview-card{background:var(--ink);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow)}
+  .preview-bar{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;background:#0d161f;border-bottom:1px solid #243240}
+  .preview-bar .ttl{font-family:var(--mono);font-size:12px;color:#9fb4c9;letter-spacing:.03em}
+  .preview-bar .dot{display:flex;gap:5px}
+  .preview-bar .dot i{width:9px;height:9px;border-radius:50%;display:block}
+  pre.preview{margin:0;padding:14px;font-family:var(--mono);font-size:11.5px;line-height:1.55;color:#cdd9e5;max-height:62vh;overflow:auto;white-space:pre;tab-size:2}
+  pre.preview .k{color:#7dd3a8}
+  pre.preview .d{color:#5e7081}
+  pre.preview .h{color:#f0a868;font-weight:600}
+  .preview-foot{padding:11px 14px;border-top:1px solid #243240;display:flex;gap:8px}
+  .preview-foot button{flex:1}
+  .copy-ok{color:var(--good)!important;border-color:var(--good)!important}
+
+  .issues{background:#0d161f;border-top:1px solid #243240;padding:10px 14px;font-family:var(--mono);font-size:11px;color:#f0a868;max-height:22vh;overflow:auto}
+  .issues .ok{color:#7dd3a8}
+  .issues .ihead{display:block;margin-bottom:6px;color:#9fb4c9;letter-spacing:.03em;text-transform:uppercase;font-size:10px}
+  .issues .irow{display:flex;gap:7px;padding:2px 0;line-height:1.5}
+  .issues .irow .where{color:#5e7081;flex-shrink:0}
+
+  .legend{font-size:12px;color:var(--ink-soft);margin-top:14px;background:var(--card);border:1px solid var(--line);border-radius:9px;padding:12px 14px}
+  .legend b{color:var(--ink)}
+  .legend .row{display:flex;gap:8px;margin-top:6px;align-items:flex-start}
+  .legend .row span:first-child{font-family:var(--mono);color:var(--blue);flex-shrink:0}
+
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:11px 18px;border-radius:9px;font-size:13.5px;box-shadow:0 8px 30px rgba(0,0,0,.2);opacity:0;pointer-events:none;transition:all .25s ease;z-index:100}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+<header class="masthead">
+  <div class="wrap">
+    <div class="brand">
+      <span class="mark">UAI</span>
+      <h1>Module Builder <span class="sub">— structured authoring for OLX</span></h1>
+    </div>
+    <div class="actions">
+      <button class="btn" id="resetBtn">Reset</button>
+      <button class="btn" id="importBtn">Import .txt</button>
+      <input type="file" id="fileInput" accept=".txt,text/plain" style="display:none">
+      <button class="btn-primary" id="downloadBtn">Download .txt</button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="grid">
+    <div class="build-col">
+      <!-- Module metadata -->
+      <section class="meta-card">
+        <div class="meta-grid">
+          <div class="field full">
+            <label class="lbl" for="m_display">Module display name</label>
+            <input id="m_display" data-meta="DISPLAY_NAME" placeholder="AI and Finance">
+          </div>
+          <div class="field">
+            <label class="lbl" for="m_course">Course ID</label>
+            <input id="m_course" class="mono-input" data-meta="COURSE_ID" placeholder="UAI.FIN.1">
+          </div>
+          <div class="field">
+            <label class="lbl" for="m_org">Org</label>
+            <input id="m_org" class="mono-input" data-meta="ORG" placeholder="UAI_SOURCE">
+          </div>
+          <div class="field">
+            <label class="lbl" for="m_run">Run</label>
+            <input id="m_run" class="mono-input" data-meta="RUN" placeholder="1T2026">
+          </div>
+          <div class="field">
+            <label class="lbl" for="m_desc">Short description</label>
+            <input id="m_desc" data-meta="SHORT_DESCRIPTION" placeholder="One-line summary">
+          </div>
+        </div>
+      </section>
+
+      <div id="chapters"></div>
+    </div>
+
+    <!-- Preview -->
+    <aside class="preview-col">
+      <div class="preview-card">
+        <div class="preview-bar">
+          <span class="ttl">module_authoring_template.txt</span>
+          <span class="dot"><i style="background:#ff5f56"></i><i style="background:#ffbd2e"></i><i style="background:#27c93f"></i></span>
+        </div>
+        <pre class="preview" id="preview"></pre>
+        <div class="issues" id="issues" hidden></div>
+        <div class="preview-foot">
+          <button class="btn" id="copyBtn">Copy</button>
+          <button class="btn-primary" id="downloadBtn2">Download</button>
+        </div>
+      </div>
+      <div class="legend">
+        <b>Why this is safe to hand authors</b>
+        <div class="row"><span>chapters</span><span>The five top-level chapters are locked and ordered — authors build inside them, never break the skeleton.</span></div>
+        <div class="row"><span>&gt;&gt;&gt;</span><span>Delimiters, naming, and problem markup are generated, not typed — so the converter always parses.</span></div>
+      </div>
+    </aside>
+  </div>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ---------- Model ---------------------------------------------------- */
+const PROBLEM_TYPES = ["multiple_choice","checkboxes","dropdown","numerical","text_input"];
+
+// Fixed chapter skeleton. Each chapter declares what authors may add inside it.
+function seedState(){
+  return {
+    meta:{DISPLAY_NAME:"",COURSE_ID:"",ORG:"",RUN:"",SHORT_DESCRIPTION:""},
+    chapters:[
+      { name:"Introduction", kind:"intro", fixed:true,
+        seqs:[ seq("Module Overview and Learning Goals",[ unit("Module Overview and Learning Goals",true,[comp("TEXT")]) ], true) ] },
+      { name:"Lectures", kind:"lectures",
+        seqs:[ lectureSeq(1) ] },
+      { name:"Recitations", kind:"recitations",
+        seqs:[ recitationSeq(1) ] },
+      { name:"Assignments", kind:"assignments",
+        seqs:[ assignmentSeq(1) ] },
+      { name:"Conclusion", kind:"conclusion", fixed:true,
+        seqs:[ seq("Module Summary",[
+            unit("Module Summary",true,[comp("TEXT")]),
+            unit("Thank You",true,[comp("VIDEO")])
+          ], true) ] },
+    ]
+  };
+}
+
+let uid=1; const nid=()=>"id"+(uid++);
+function seq(title,units,fixed=false){return{id:nid(),title,units,fixed}}
+function unit(title,fixed,comps){return{id:nid(),title,fixed:!!fixed,comps}}
+function comp(kind,extra={}){
+  const c={id:nid(),kind};
+  if(kind==="PROBLEM"){c.ptype="multiple_choice";c.options=[{t:"",correct:false},{t:"",correct:true},{t:"",correct:false}];c.answer="";c.tolerance=""}
+  return Object.assign(c,extra);
+}
+function lectureSeq(n){
+  return seq("Lecture "+n+":",[
+    unit("Overview and Learning Objectives",true,[comp("TEXT")]),
+    unit("L"+n+".1",false,[comp("TEXT"),comp("VIDEO"),comp("PROBLEM")]),
+    unit("Summary",true,[comp("TEXT")]),
+  ]);
+}
+function recitationSeq(n){
+  return seq("Recitation "+n,[
+    unit("Recitation Overview",true,[comp("TEXT")]),
+    unit("R"+n+".1",false,[comp("VIDEO")]),
+    unit("R"+n+".2",false,[comp("VIDEO")]),
+    unit("Recitation Summary",true,[comp("TEXT")]),
+  ]);
+}
+function assignmentSeq(n){
+  return seq("Assignment "+n,[
+    unit("Assignment Overview",true,[comp("TEXT")]),
+    unit("Assignment "+n+": Part 1",false,[comp("PROBLEM")]),
+    unit("Assignment Summary",true,[comp("TEXT")]),
+  ]);
+}
+
+let state = seedState();
+
+/* ---------- Helpers to locate nodes ---------------------------------- */
+function findUnit(id){
+  for(const ch of state.chapters) for(const s of ch.seqs) for(const u of s.units) if(u.id===id) return {u,s,ch};
+  return null;
+}
+function findSeq(id){
+  for(const ch of state.chapters) for(const s of ch.seqs) if(s.id===id) return {s,ch};
+  return null;
+}
+
+/* ---------- Render --------------------------------------------------- */
+const chaptersEl = document.getElementById('chapters');
+
+function render(){
+  chaptersEl.innerHTML="";
+  state.chapters.forEach(ch=>chaptersEl.appendChild(renderChapter(ch)));
+  renderPreview();
+}
+
+function el(tag,cls,html){const e=document.createElement(tag);if(cls)e.className=cls;if(html!=null)e.innerHTML=html;return e}
+
+function renderChapter(ch){
+  const wrap=el('div','chapter');
+  const head=el('div','chapter-head');
+  head.innerHTML=`<span class="chapter-title">${ch.name}</span>
+    <span class="chapter-kind">Chapter</span>
+    <span class="lock">${ch.fixed?"🔒 fixed":"＋ open for content"}</span>`;
+  wrap.appendChild(head);
+  const body=el('div','chapter-body');
+
+  const hints={
+    intro:"One overview subsection. Fixed — every module opens here.",
+    lectures:"Add as many lectures as the module needs. Each opens with an Overview unit and closes with a Summary.",
+    recitations:"Video walkthroughs. Each recitation is Overview → numbered video units → Summary.",
+    assignments:"Each assignment has an Overview, one or more Parts (problem sets), and a Summary.",
+    conclusion:"Module wrap-up. Fixed."
+  };
+  if(hints[ch.kind]) body.appendChild(el('p','chapter-hint',hints[ch.kind]));
+
+  ch.seqs.forEach(s=>body.appendChild(renderSeq(s,ch)));
+
+  // Add-subsection control for the open chapters
+  if(["lectures","recitations","assignments"].includes(ch.kind)){
+    const labelMap={lectures:"+ Add lecture",recitations:"+ Add recitation",assignments:"+ Add assignment"};
+    const add=el('button','btn-add',labelMap[ch.kind]);
+    add.onclick=()=>{
+      // Number from the highest existing number, not the count — so deleting a
+      // middle subsection never produces a duplicate number on the next add.
+      const reMap={lectures:/Lecture\s+(\d+)/,recitations:/Recitation\s+(\d+)/,assignments:/Assignment\s+(\d+)/};
+      const n=nextNum(ch.seqs,s=>s.title,reMap[ch.kind]);
+      if(ch.kind==="lectures")ch.seqs.push(lectureSeq(n));
+      if(ch.kind==="recitations")ch.seqs.push(recitationSeq(n));
+      if(ch.kind==="assignments")ch.seqs.push(assignmentSeq(n));
+      render();
+    };
+    body.appendChild(add);
+  }
+  wrap.appendChild(body);
+  return wrap;
+}
+
+function renderSeq(s,ch){
+  const wrap=el('div','seq');
+  const head=el('div','seq-head');
+  const prefix=el('span','seq-prefix','subsection');
+  const inp=document.createElement('input');
+  inp.value=s.title; inp.placeholder="Subsection title";
+  inp.oninput=e=>{s.title=e.target.value;renderPreview()};
+  head.appendChild(prefix); head.appendChild(inp);
+  // allow removing extra subsections (not the first/fixed)
+  const removable = !s.fixed && ch.seqs.indexOf(s)>0;
+  if(removable){
+    const del=el('button','btn-icon btn-danger','✕ remove');
+    del.onclick=()=>{ch.seqs=ch.seqs.filter(x=>x!==s);render()};
+    head.appendChild(el('span','row-actions')).appendChild(del);
+  }
+  wrap.appendChild(head);
+
+  const body=el('div','seq-body');
+  s.units.forEach(u=>body.appendChild(renderUnit(u,s,ch)));
+
+  // Add-unit controls depend on chapter kind
+  if(ch.kind==="lectures"||ch.kind==="recitations"){
+    const add=el('button','btn-ghost','+ Add content unit');
+    add.style.cssText="border:1px dashed var(--line);border-radius:7px;width:100%;margin-top:4px";
+    add.onclick=()=>{
+      // Stem prefix follows the subsection's own number (parsed from its title),
+      // and the suffix continues from the highest existing stem so deletions
+      // don't create collisions like two "L1.2" units.
+      const letter=ch.kind==="lectures"?"L":"R";
+      const lecNum=numFromTitle(s.title,/(\d+)/)||seqNumber(s,ch);
+      const suffix=nextNum(s.units,u=>u.title,new RegExp("^"+letter+lecNum+"\\.(\\d+)"));
+      const stem=letter+lecNum+"."+suffix;
+      const comps = ch.kind==="lectures" ? [comp("TEXT"),comp("VIDEO"),comp("PROBLEM")] : [comp("VIDEO")];
+      // insert before the trailing Summary unit
+      const idx=s.units.length-1;
+      s.units.splice(idx,0,unit(stem,false,comps));
+      render();
+    };
+    body.appendChild(add);
+  }
+  if(ch.kind==="assignments"){
+    const add=el('button','btn-ghost','+ Add part');
+    add.style.cssText="border:1px dashed var(--line);border-radius:7px;width:100%;margin-top:4px";
+    add.onclick=()=>{
+      const partNum=nextNum(s.units,u=>u.title,/Part\s+(\d+)/);
+      const idx=s.units.length-1;
+      s.units.splice(idx,0,unit(s.title+": Part "+partNum,false,[comp("PROBLEM")]));
+      render();
+    };
+    body.appendChild(add);
+  }
+  wrap.appendChild(body);
+  return wrap;
+}
+function seqNumber(s,ch){return ch.seqs.indexOf(s)+1}
+function numFromTitle(title,re){const m=(title||"").match(re);return m?+m[1]:0}
+function nextNum(items,getTitle,re){let mx=0;items.forEach(it=>{const v=numFromTitle(getTitle(it),re);if(v>mx)mx=v});return mx+1}
+
+function renderUnit(u,s,ch){
+  const wrap=el('div','unit');
+  const head=el('div','unit-head');
+  head.appendChild(el('span','unit-badge'+(u.fixed?' fixed':''),u.fixed?'fixed unit':'unit'));
+  const inp=document.createElement('input');
+  inp.value=u.title; inp.placeholder="Unit title";
+  inp.oninput=e=>{u.title=e.target.value;renderPreview()};
+  head.appendChild(inp);
+  if(!u.fixed){
+    const del=el('button','btn-icon btn-danger','✕');
+    del.title="Remove unit";
+    del.onclick=()=>{s.units=s.units.filter(x=>x!==u);render()};
+    const ra=el('span','row-actions'); ra.appendChild(del); head.appendChild(ra);
+  }
+  wrap.appendChild(head);
+
+  const body=el('div','unit-body');
+  u.comps.forEach(c=>body.appendChild(renderComp(c,u)));
+
+  // add-component menu (only on non-fixed content units, and assignment parts)
+  if(!u.fixed){
+    const ar=el('div','add-row');
+    ["TEXT","VIDEO","PROBLEM"].forEach(k=>{
+      const b=el('button','btn-ghost','+ '+k.charAt(0)+k.slice(1).toLowerCase());
+      b.onclick=()=>{u.comps.push(comp(k));render()};
+      ar.appendChild(b);
+    });
+    body.appendChild(ar);
+  }
+  wrap.appendChild(body);
+  return wrap;
+}
+
+function renderComp(c,u){
+  const wrap=el('div','comp');
+  const head=el('div','comp-head');
+  head.innerHTML=`<span class="comp-diamond">◆</span><span class="comp-kind">${c.kind}</span>`;
+  if(!u.fixed || u.comps.length>1){
+    const del=el('button','btn-icon btn-danger','✕');
+    del.onclick=()=>{u.comps=u.comps.filter(x=>x!==c);render()};
+    const ra=el('span','row-actions');ra.appendChild(del);head.appendChild(ra);
+  }
+  wrap.appendChild(head);
+
+  const body=el('div','comp-body');
+  if(c.kind==="TEXT"){
+    body.appendChild(fieldText("Title",c.title||"",v=>c.title=v,false,"Optional heading"));
+    body.appendChild(fieldText("Body",c.body||"",v=>c.body=v,true,"Write prose. *bold*, _italic_, [text](url), [[image: file.png | alt]]"));
+  }
+  if(c.kind==="VIDEO"){
+    const row=el('div','comp-row');
+    row.appendChild(fieldText("Title",c.title||"",v=>c.title=v));
+    row.appendChild(fieldText("Duration",c.duration||"",v=>c.duration=v,false,"4:12"));
+    body.appendChild(row);
+    body.appendChild(fieldText("Video URL",c.url||"",v=>c.url=v,false,"https://...",true));
+    body.appendChild(fieldText("Transcript file",c.transcript||"",v=>c.transcript=v,false,"name.srt",true));
+  }
+  if(c.kind==="PROBLEM"){
+    body.appendChild(fieldText("Title",c.title||"",v=>c.title=v));
+    // problem type selector
+    const f=el('div','field');
+    f.appendChild(el('label','lbl',null)).textContent="Problem type";
+    const sel=document.createElement('select');
+    PROBLEM_TYPES.forEach(p=>{const o=document.createElement('option');o.value=p;o.textContent=p.replace(/_/g,' ');if(p===c.ptype)o.selected=true;sel.appendChild(o)});
+    sel.onchange=e=>{c.ptype=e.target.value;render()};
+    f.appendChild(sel); body.appendChild(f);
+
+    body.appendChild(fieldText("Question",c.question||"",v=>c.question=v,true));
+
+    if(c.ptype==="multiple_choice"||c.ptype==="checkboxes"||c.ptype==="dropdown"){
+      body.appendChild(renderOptions(c));
+    } else { // numerical / text_input
+      const row=el('div','comp-row');
+      row.appendChild(fieldText("Answer",c.answer||"",v=>c.answer=v,false,"",true));
+      if(c.ptype==="numerical") row.appendChild(fieldText("Tolerance",c.tolerance||"",v=>c.tolerance=v,false,"±0.01",true));
+      body.appendChild(row);
+    }
+    body.appendChild(fieldText("Explanation",c.explanation||"",v=>c.explanation=v,true));
+    body.appendChild(fieldText("Hint",c.hint||"",v=>c.hint=v,false));
+  }
+  wrap.appendChild(body);
+  return wrap;
+}
+
+function renderOptions(c){
+  const f=el('div','field');
+  f.appendChild(el('label','lbl',null)).textContent="Options — tap the marker to set the correct answer"+(c.ptype==="checkboxes"?"s":"");
+  const list=el('div','opts');
+  const multi = c.ptype==="checkboxes";
+  c.options.forEach((o,i)=>{
+    const row=el('div','opt');
+    const mk=el('button','marker'+(o.correct?' on':''),markerGlyph(c.ptype,o.correct));
+    mk.title="Set correct";
+    mk.onclick=()=>{
+      if(multi){o.correct=!o.correct}
+      else{c.options.forEach(x=>x.correct=false);o.correct=true}
+      render();
+    };
+    const inp=document.createElement('input');inp.type="text";inp.value=o.t;inp.placeholder="Option "+(i+1);
+    inp.oninput=e=>{o.t=e.target.value;renderPreview()};
+    row.appendChild(mk);row.appendChild(inp);
+    if(c.options.length>2){
+      const del=el('button','btn-icon btn-danger','✕');
+      del.onclick=()=>{c.options.splice(i,1);render()};
+      row.appendChild(del);
+    }
+    list.appendChild(row);
+  });
+  const add=el('button','opt-add','+ Add option');
+  add.onclick=()=>{c.options.push({t:"",correct:false});render()};
+  f.appendChild(list);f.appendChild(add);
+  return f;
+}
+function markerGlyph(ptype,on){
+  if(ptype==="checkboxes")return on?"☑":"☐";
+  return on?"●":"○";
+}
+
+function fieldText(label,val,onset,area=false,ph="",mono=false){
+  const f=el('div','field');
+  f.appendChild(el('label','lbl',null)).textContent=label;
+  const inp=area?document.createElement('textarea'):document.createElement('input');
+  inp.value=val; if(ph)inp.placeholder=ph; if(mono)inp.className="mono-input";
+  inp.oninput=e=>{onset(e.target.value);renderPreview()};
+  f.appendChild(inp);
+  return f;
+}
+
+/* ---------- Serialize to template text ------------------------------- */
+function bar(ch){return "=".repeat(80)}
+function dash(){return "-".repeat(80)}
+
+function serialize(){
+  // bind meta inputs
+  document.querySelectorAll('[data-meta]').forEach(i=>state.meta[i.dataset.meta]=i.value);
+  const L=[];
+  L.push(bar(),"MODULE AUTHORING TEMPLATE",bar(),"");
+  L.push(bar(),"MODULE",bar());
+  L.push("DISPLAY_NAME: "+state.meta.DISPLAY_NAME);
+  L.push("COURSE_ID: "+state.meta.COURSE_ID);
+  L.push("ORG: "+state.meta.ORG);
+  L.push("RUN: "+state.meta.RUN);
+  L.push("SHORT_DESCRIPTION: "+state.meta.SHORT_DESCRIPTION);
+  L.push("");
+
+  state.chapters.forEach(ch=>{
+    L.push(bar(),"CHAPTER: "+ch.name,bar(),"");
+    ch.seqs.forEach(s=>{
+      L.push(dash(),"SEQUENTIAL: "+s.title,dash(),"");
+      s.units.forEach(u=>{
+        L.push(">>> UNIT: "+u.title);
+        u.comps.forEach(c=>{
+          L.push(">>> COMPONENT: "+c.kind);
+          if(c.kind==="TEXT"){
+            L.push("TITLE: "+(c.title||""));
+            L.push("BODY:"); if(c.body)L.push(c.body);
+          }
+          if(c.kind==="VIDEO"){
+            L.push("TITLE: "+(c.title||""));
+            L.push("VIDEO_URL: "+(c.url||""));
+            L.push("TRANSCRIPT_FILE: "+(c.transcript||""));
+            L.push("DURATION: "+(c.duration||""));
+          }
+          if(c.kind==="PROBLEM"){
+            L.push("TITLE: "+(c.title||""));
+            L.push("PROBLEM_TYPE: "+c.ptype);
+            L.push("QUESTION: "+(c.question||""));
+            if(["multiple_choice","checkboxes","dropdown"].includes(c.ptype)){
+              L.push("OPTIONS:");
+              c.options.forEach(o=>{
+                const m = c.ptype==="checkboxes" ? (o.correct?"[x]":"[ ]") : (o.correct?"(x)":"( )");
+                L.push("- "+m+" "+o.t);
+              });
+            } else {
+              L.push("ANSWER: "+(c.answer||""));
+              if(c.ptype==="numerical")L.push("TOLERANCE: "+(c.tolerance||""));
+            }
+            L.push("EXPLANATION: "+(c.explanation||""));
+            L.push("HINT: "+(c.hint||""));
+          }
+          L.push("");
+        });
+      });
+    });
+  });
+  L.push(bar(),"END OF MODULE",bar());
+  return L.join("\n");
+}
+
+/* ---------- Preview with light syntax tint --------------------------- */
+function renderPreview(){
+  const txt=serialize();
+  const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const html=txt.split('\n').map(line=>{
+    if(/^={5,}$/.test(line)||/^-{5,}$/.test(line))return '<span class="d">'+esc(line)+'</span>';
+    if(/^(CHAPTER:|SEQUENTIAL:|>>> UNIT:|>>> COMPONENT:|MODULE$|END OF MODULE$|MODULE AUTHORING)/.test(line))return '<span class="h">'+esc(line)+'</span>';
+    if(/^[A-Z_]+:/.test(line))return '<span class="k">'+esc(line.split(':')[0])+':</span>'+esc(line.slice(line.indexOf(':')+1));
+    return esc(line);
+  }).join('\n');
+  document.getElementById('preview').innerHTML=html;
+  renderIssues();
+}
+
+/* ---------- Validation: catch what would confuse the converter -------- */
+function validate(){
+  const issues=[];
+  if(!state.meta.DISPLAY_NAME.trim()) issues.push({where:"Module",msg:"Missing display name"});
+  if(!state.meta.COURSE_ID.trim())    issues.push({where:"Module",msg:"Missing course ID"});
+  state.chapters.forEach(ch=>ch.seqs.forEach(s=>s.units.forEach(u=>u.comps.forEach(c=>{
+    const at=s.title+" › "+(u.title||"untitled");
+    if(c.kind==="VIDEO" && !(c.url||"").trim())
+      issues.push({where:at,msg:"Video has no URL"});
+    if(c.kind==="TEXT" && !(c.body||"").trim() && !(c.title||"").trim())
+      issues.push({where:at,msg:"Empty text component"});
+    if(c.kind==="PROBLEM"){
+      if(!(c.question||"").trim()) issues.push({where:at,msg:"Problem has no question"});
+      if(["multiple_choice","checkboxes","dropdown"].includes(c.ptype)){
+        const correct=c.options.filter(o=>o.correct).length;
+        const blank=c.options.some(o=>!o.t.trim());
+        if(c.ptype==="checkboxes" && correct===0) issues.push({where:at,msg:"Checkboxes: no answer marked correct"});
+        if(c.ptype!=="checkboxes" && correct!==1) issues.push({where:at,msg:"Choice problem needs exactly one correct answer"});
+        if(blank) issues.push({where:at,msg:"Problem has a blank option"});
+      } else if(!(c.answer||"").trim()){
+        issues.push({where:at,msg:"Problem has no answer"});
+      }
+    }
+  }))));
+  return issues;
+}
+
+function renderIssues(){
+  const box=document.getElementById('issues');
+  const issues=validate();
+  if(!issues.length){
+    box.hidden=false;
+    box.innerHTML='<span class="ok">✓ No issues — ready to download.</span>';
+    return;
+  }
+  const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  box.hidden=false;
+  box.innerHTML='<span class="ihead">'+issues.length+' issue'+(issues.length>1?'s':'')+' to fix before handing off</span>'+
+    issues.map(it=>'<div class="irow"><span class="where">'+esc(it.where)+'</span><span>'+esc(it.msg)+'</span></div>').join('');
+}
+
+/* ---------- Deserialize: parse template text back into state --------- */
+// Maps an imported file onto the locked skeleton. Chapters are matched by
+// name; unknown chapters are ignored, missing ones are restored. Within the
+// open chapters (Lectures/Recitations/Assignments) the file drives how many
+// subsections/units/components exist; fixed chapters keep their canonical shape
+// but absorb edited titles/content from the file.
+
+const CHAPTER_KIND = {
+  "Introduction":"intro","Lectures":"lectures","Recitations":"recitations",
+  "Assignments":"assignments","Conclusion":"conclusion"
+};
+const FIXED_UNIT_TITLES = new Set([
+  "Overview and Learning Objectives","Summary","Recitation Overview",
+  "Recitation Summary","Assignment Overview","Assignment Summary",
+  "Module Overview and Learning Goals","Module Summary","Thank You"
+]);
+
+function parseTemplate(text){
+  const lines = text.replace(/\r\n/g,"\n").split("\n");
+  const isEq = l=>/^={5,}$/.test(l.trim());
+  const isDash = l=>/^-{5,}$/.test(l.trim());
+
+  const meta = {DISPLAY_NAME:"",COURSE_ID:"",ORG:"",RUN:"",SHORT_DESCRIPTION:""};
+  const chapters = []; // {name, seqs:[{title, units:[{title, comps:[...]}]}]}
+  let curChapter=null, curSeq=null, curUnit=null, curComp=null;
+  let mode=null; // 'module' while reading meta
+  let bodyBuffer=null; // collecting multi-line BODY
+
+  function flushBody(){
+    if(curComp && bodyBuffer!==null){ curComp.body=bodyBuffer.join("\n").replace(/\s+$/,""); bodyBuffer=null; }
+  }
+
+  for(let i=0;i<lines.length;i++){
+    const line=lines[i];
+    // section banners: the label sits between two equals rules
+    if(isEq(line)){
+      const label=(lines[i+1]||"").trim();
+      // consume label + closing rule
+      if(!isEq(lines[i+1])){
+        if(/^CHAPTER:/.test(label)){
+          flushBody();
+          curChapter={name:label.replace(/^CHAPTER:\s*/,"").trim(),seqs:[]};
+          chapters.push(curChapter); curSeq=null;curUnit=null;curComp=null;mode=null;
+        } else if(/^MODULE$/.test(label)){
+          flushBody(); mode="module"; curChapter=null;curSeq=null;curUnit=null;curComp=null;
+        } else if(/^END OF MODULE$/.test(label) || /^MODULE AUTHORING/.test(label) || /^NOTES/.test(label) || /^HOW TO USE/.test(label)){
+          flushBody(); mode=null;
+        }
+        i++; if(isEq(lines[i+1])) i++; // skip closing rule
+        continue;
+      }
+    }
+    if(isDash(line)){
+      const label=(lines[i+1]||"").trim();
+      if(/^SEQUENTIAL:/.test(label) && curChapter){
+        flushBody();
+        curSeq={title:label.replace(/^SEQUENTIAL:\s*/,"").replace(/\s+$/,""),units:[]};
+        curChapter.seqs.push(curSeq); curUnit=null;curComp=null;
+        i++; if(isDash(lines[i+1])) i++;
+        continue;
+      }
+    }
+    if(/^>>>\s*UNIT:/.test(line)){
+      flushBody();
+      curUnit={title:line.replace(/^>>>\s*UNIT:\s*/,"").replace(/\s+$/,""),comps:[]};
+      if(curSeq) curSeq.units.push(curUnit);
+      curComp=null; continue;
+    }
+    if(/^>>>\s*COMPONENT:/.test(line)){
+      flushBody();
+      const kind=line.replace(/^>>>\s*COMPONENT:\s*/,"").trim().toUpperCase();
+      curComp={kind};
+      if(kind==="PROBLEM"){curComp.options=[];curComp.ptype="multiple_choice";}
+      if(curUnit) curUnit.comps.push(curComp);
+      continue;
+    }
+    // meta lines
+    if(mode==="module"){
+      const m=line.match(/^([A-Z_]+):\s*(.*)$/);
+      if(m && meta.hasOwnProperty(m[1])){ meta[m[1]]=m[2]; }
+      continue;
+    }
+    // component fields
+    if(curComp){
+      // BODY is multi-line: capture everything until next structural marker
+      if(/^BODY:/.test(line)){
+        bodyBuffer=[]; const rest=line.replace(/^BODY:\s?/,""); if(rest)bodyBuffer.push(rest);
+        continue;
+      }
+      if(bodyBuffer!==null){
+        // stop body at a blank line followed by structure, or any new field/marker
+        if(/^[A-Z_]+:/.test(line)||/^>>>/.test(line)||isEq(line)||isDash(line)){
+          flushBody(); // fall through to handle this line as a field below
+        } else {
+          bodyBuffer.push(line); continue;
+        }
+      }
+      // option lines
+      const opt=line.match(/^-\s*([\(\[])([ xX])([\)\]])\s?(.*)$/);
+      if(opt && curComp.kind==="PROBLEM"){
+        const bracket=opt[1];
+        curComp.options.push({t:opt[4]||"",correct:opt[2].toLowerCase()==="x"});
+        if(bracket==="[") curComp._checkbox=true;
+        continue;
+      }
+      const f=line.match(/^([A-Z_]+):\s?(.*)$/);
+      if(f){
+        const key=f[1], val=f[2];
+        if(key==="TITLE")curComp.title=val;
+        else if(key==="VIDEO_URL")curComp.url=val;
+        else if(key==="TRANSCRIPT_FILE")curComp.transcript=val;
+        else if(key==="DURATION")curComp.duration=val;
+        else if(key==="PROBLEM_TYPE")curComp.ptype=(val||"multiple_choice").trim();
+        else if(key==="QUESTION")curComp.question=val;
+        else if(key==="ANSWER")curComp.answer=val;
+        else if(key==="TOLERANCE")curComp.tolerance=val;
+        else if(key==="EXPLANATION")curComp.explanation=val;
+        else if(key==="HINT")curComp.hint=val;
+        else if(key==="OPTIONS"){/* options follow on next lines */}
+        continue;
+      }
+    }
+  }
+  flushBody();
+  return {meta,chapters};
+}
+
+// Rebuild a clean state object from parsed data, reasserting skeleton rules.
+function stateFromParsed(parsed){
+  uid=1;
+  const blank=seedState();           // canonical skeleton (locked chapters in order)
+  // meta
+  Object.keys(blank.meta).forEach(k=>{ if(parsed.meta[k]!=null) blank.meta[k]=parsed.meta[k]; });
+
+  // index parsed chapters by name
+  const byName={}; parsed.chapters.forEach(c=>byName[c.name]=c);
+
+  blank.chapters.forEach(ch=>{
+    const src=byName[ch.name];
+    if(!src||!src.seqs.length) return; // keep canonical default if file lacks this chapter
+    ch.seqs = src.seqs.map((ssrc,si)=>{
+      const s=seq(ssrc.title, ssrc.units.map(usrc=>{
+        const fixed = FIXED_UNIT_TITLES.has(usrc.title.trim());
+        const comps = usrc.comps.map(c=>compFromParsed(c));
+        return unit(usrc.title, fixed, comps.length?comps:[comp("TEXT")]);
+      }), /*fixed seq*/ ch.fixed && si===0);
+      return s;
+    });
+    // for fixed chapters (intro/conclusion) keep the seq marked fixed
+    if(ch.fixed) ch.seqs.forEach((s,si)=>{ s.fixed = (si===0); });
+  });
+  return blank;
+}
+
+function compFromParsed(c){
+  const out=comp(c.kind);
+  if(c.kind==="TEXT"){ out.title=c.title||""; out.body=c.body||""; }
+  if(c.kind==="VIDEO"){ out.title=c.title||""; out.url=c.url||""; out.transcript=c.transcript||""; out.duration=c.duration||""; }
+  if(c.kind==="PROBLEM"){
+    out.title=c.title||"";
+    out.ptype = PROBLEM_TYPES.includes(c.ptype) ? c.ptype : (c._checkbox?"checkboxes":"multiple_choice");
+    out.question=c.question||"";
+    out.explanation=c.explanation||""; out.hint=c.hint||"";
+    if(["multiple_choice","checkboxes","dropdown"].includes(out.ptype)){
+      out.options = (c.options&&c.options.length)?c.options.map(o=>({t:o.t||"",correct:!!o.correct}))
+                                                 :[{t:"",correct:false},{t:"",correct:true},{t:"",correct:false}];
+      // checkboxes may have 0 correct; choice types need exactly one — don't force, author can fix
+    } else {
+      out.answer=c.answer||""; out.tolerance=c.tolerance||"";
+    }
+  }
+  return out;
+}
+
+function importText(text){
+  let parsed;
+  try{ parsed=parseTemplate(text); }
+  catch(err){ toast("Couldn't read that file — is it a module template?"); return; }
+  if(!parsed.chapters.length && !parsed.meta.DISPLAY_NAME){
+    toast("No module structure found in that file."); return;
+  }
+  state = stateFromParsed(parsed);
+  bindMeta(); render();
+  toast("Imported — resume editing where you left off.");
+}
+
+/* ---------- Actions -------------------------------------------------- */
+function download(){
+  const txt=serialize();
+  const name=(state.meta.DISPLAY_NAME||"module").replace(/[^a-z0-9]+/gi,'_').toLowerCase()+"_authoring.txt";
+  const blob=new Blob([txt],{type:"text/plain"});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();
+  toast("Downloaded "+name);
+}
+function copy(){
+  navigator.clipboard.writeText(serialize()).then(()=>{
+    const b=document.getElementById('copyBtn');b.textContent="Copied ✓";b.classList.add('copy-ok');
+    setTimeout(()=>{b.textContent="Copy";b.classList.remove('copy-ok')},1400);
+  });
+}
+let toastTimer;
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),1900)}
+
+document.getElementById('downloadBtn').onclick=download;
+document.getElementById('downloadBtn2').onclick=download;
+document.getElementById('copyBtn').onclick=copy;
+document.getElementById('importBtn').onclick=()=>document.getElementById('fileInput').click();
+document.getElementById('fileInput').onchange=e=>{
+  const file=e.target.files[0]; if(!file) return;
+  const r=new FileReader();
+  r.onload=ev=>{ importText(ev.target.result); e.target.value=""; };
+  r.onerror=()=>toast("Couldn't open that file.");
+  r.readAsText(file);
+};
+document.getElementById('resetBtn').onclick=()=>{
+  if(confirm("Reset the whole module? This clears everything you've entered.")){uid=1;state=seedState();bindMeta();render()}
+};
+document.querySelectorAll('[data-meta]').forEach(i=>i.oninput=()=>{state.meta[i.dataset.meta]=i.value;renderPreview()});
+function bindMeta(){document.querySelectorAll('[data-meta]').forEach(i=>i.value=state.meta[i.dataset.meta]||"")}
+
+render();
+</script>
+</body>
+</html>
