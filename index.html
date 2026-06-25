@@ -697,7 +697,7 @@ function renderComp(c,u){
     sel.onchange=e=>{c.ptype=e.target.value;render()};
     f.appendChild(sel); body.appendChild(f);
 
-    body.appendChild(fieldText("Question",c.question||"",v=>c.question=v,true));
+    body.appendChild(fieldText("Question",c.question||"",v=>c.question=v,true,"Supports *bold*, _italic_, [text](url), [[image: file.png | alt]], - lists"));
 
     if(c.ptype==="multiple_choice"||c.ptype==="checkboxes"||c.ptype==="dropdown"){
       body.appendChild(renderOptions(c));
@@ -707,8 +707,8 @@ function renderComp(c,u){
       if(c.ptype==="numerical") row.appendChild(fieldText("Tolerance",c.tolerance||"",v=>c.tolerance=v,false,"±0.01",true));
       body.appendChild(row);
     }
-    body.appendChild(fieldText("Explanation",c.explanation||"",v=>c.explanation=v,true));
-    body.appendChild(fieldText("Hint",c.hint||"",v=>c.hint=v,false));
+    body.appendChild(fieldText("Explanation",c.explanation||"",v=>c.explanation=v,true,"Supports *bold*, _italic_, [text](url), - lists"));
+    body.appendChild(fieldText("Hint",c.hint||"",v=>c.hint=v,false,"Supports *bold*, _italic_, [text](url)"));
   }
   wrap.appendChild(body);
   return wrap;
@@ -1294,7 +1294,7 @@ function olxProblem(c){
     resp='<stringresponse answer="'+xmlEsc((c.answer||"").trim())+'" type="ci"><textline size="40"/></stringresponse>';
   const q=mdToHtml(c.question||"");
   const sol=(c.explanation||"").trim()?'<solution><div class="detailed-solution"><p>Explanation</p>'+mdToHtml(c.explanation)+'</div></solution>':'';
-  const hint=(c.hint||"").trim()?'<demandhint><hint>'+xmlText(c.hint)+'</hint></demandhint>':'';
+  const hint=(c.hint||"").trim()?'<demandhint><hint>'+mdToHtml(c.hint)+'</hint></demandhint>':'';
   return '<problem display_name="'+xmlEsc(c.title||"Problem")+'">\n'+q+'\n'+resp+'\n'+sol+hint+'\n</problem>\n';
 }
 function olxVideo(c){

@@ -69,7 +69,7 @@ TRANSCRIPT_FILE: L1-1.srt
 TITLE: 
 PROBLEM_TYPE: multiple_choice
 QUESTION:
-Which best describes a feature?
+Which best describes a *feature*?
 <<<
 OPTIONS:
 - ( ) The value the model predicts
@@ -77,9 +77,9 @@ OPTIONS:
 - ( ) The model's accuracy
 - ( ) A type of neural network
 EXPLANATION:
-A feature is an input; the prediction is the output (label).
+A _feature_ is an *input*; the value you predict is the *label*. See the [glossary](https://example.edu/uai/glossary) for more.
 <<<
-HINT: Think inputs vs. outputs.
+HINT: Think *inputs* vs. *outputs*.
 
 >>> UNIT: L1.2 Evaluating a model
 >>> COMPONENT: TEXT
