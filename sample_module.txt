@@ -21,6 +21,8 @@ SEQUENTIAL: Module Overview and Learning Goals
 
 >>> UNIT: Module Overview and Learning Goals
 >>> COMPONENT: TEXT
+CONCEPT: Module overview
+QUALIFIER: 
 TITLE: Welcome to AI and Finance
 BODY:
 Welcome to *AI and Finance*. This module shows how machine learning is reshaping _financial analysis_ and decision-making.
@@ -43,6 +45,8 @@ SEQUENTIAL: Lecture 1: Foundations
 
 >>> UNIT: Overview and Learning Objectives
 >>> COMPONENT: TEXT
+CONCEPT: 
+QUALIFIER: 
 TITLE: 
 BODY:
 In this lecture we set up the vocabulary: *features*, *labels*, *training*, and *inference*.
@@ -50,6 +54,8 @@ In this lecture we set up the vocabulary: *features*, *labels*, *training*, and 
 
 >>> UNIT: L1.1 What is a model?
 >>> COMPONENT: TEXT
+CONCEPT: Features and labels
+QUALIFIER: 
 TITLE: Reading
 BODY:
 A *model* maps inputs (called _features_) to outputs (called _labels_). *Training* fits that mapping to historical data; _inference_ is using the trained model on new data.
@@ -61,11 +67,15 @@ Key terms:
 <<<
 
 >>> COMPONENT: VIDEO
+CONCEPT: What is a model
+QUALIFIER: 
 TITLE: Models in 4 minutes
 VIDEO_URL: E-4aGqg69TI
 TRANSCRIPT_FILE: L1-1.srt
 
 >>> COMPONENT: PROBLEM
+CONCEPT: Feature vs label
+QUALIFIER: 
 TITLE: 
 PROBLEM_TYPE: multiple_choice
 QUESTION:
@@ -83,6 +93,8 @@ HINT: Think *inputs* vs. *outputs*.
 
 >>> UNIT: L1.2 Evaluating a model
 >>> COMPONENT: TEXT
+CONCEPT: Model evaluation metrics
+QUALIFIER: 
 TITLE: Reading
 BODY:
 *Accuracy* alone can mislead on _imbalanced_ data — *precision* and *recall* tell a fuller story.
@@ -93,6 +105,8 @@ See the [metrics cheat-sheet](https://example.edu/uai/metrics) for the full defi
 <<<
 
 >>> COMPONENT: PROBLEM
+CONCEPT: Model evaluation metrics
+QUALIFIER: select all
 TITLE: 
 PROBLEM_TYPE: checkboxes
 QUESTION:
@@ -110,9 +124,11 @@ HINT:
 
 >>> UNIT: Summary
 >>> COMPONENT: TEXT
+CONCEPT: 
+QUALIFIER: 
 TITLE: 
 BODY:
-You can now define features, labels, training, and inference.
+You can now define *features*, *labels*, *training*, and *inference*.
 <<<
 
 --------------------------------------------------------------------------------
@@ -121,6 +137,8 @@ SEQUENTIAL: Lecture 2: Risk and Forecasting
 
 >>> UNIT: Overview and Learning Objectives
 >>> COMPONENT: TEXT
+CONCEPT: 
+QUALIFIER: 
 TITLE: 
 BODY:
 We apply the foundations to a forecasting task and discuss model risk.
@@ -128,17 +146,23 @@ We apply the foundations to a forecasting task and discuss model risk.
 
 >>> UNIT: L2.1 Forecasting returns
 >>> COMPONENT: TEXT
+CONCEPT: Forecasting baselines
+QUALIFIER: 
 TITLE: Reading
 BODY:
 A _naive_ forecast predicts *tomorrow = today*. A good model must *beat that baseline* — otherwise it adds no value.
 <<<
 
 >>> COMPONENT: VIDEO
+CONCEPT: Why baselines matter
+QUALIFIER: 
 TITLE: Baselines matter
 VIDEO_URL: E-4aGqg69TI
 TRANSCRIPT_FILE: L2-1.srt
 
 >>> COMPONENT: PROBLEM
+CONCEPT: Annual return
+QUALIFIER: 
 TITLE: 
 PROBLEM_TYPE: numerical
 QUESTION:
@@ -153,6 +177,8 @@ HINT:
 
 >>> UNIT: Summary
 >>> COMPONENT: TEXT
+CONCEPT: 
+QUALIFIER: 
 TITLE: 
 BODY:
 You can frame a forecast, set a baseline, and compute simple returns.
@@ -168,6 +194,8 @@ SEQUENTIAL: Recitation 1: Tooling
 
 >>> UNIT: Recitation Overview
 >>> COMPONENT: TEXT
+CONCEPT: 
+QUALIFIER: 
 TITLE: 
 BODY:
 A walkthrough of the notebook environment used in assignments.
@@ -175,18 +203,24 @@ A walkthrough of the notebook environment used in assignments.
 
 >>> UNIT: R1.1 Setting up the notebook
 >>> COMPONENT: VIDEO
+CONCEPT: Notebook setup
+QUALIFIER: 
 TITLE: Notebook setup
 VIDEO_URL: E-4aGqg69TI
 TRANSCRIPT_FILE: R1-1.srt
 
 >>> UNIT: R1.2 Loading market data
 >>> COMPONENT: VIDEO
+CONCEPT: Loading market data
+QUALIFIER: 
 TITLE: Loading data
 VIDEO_URL: E-4aGqg69TI
 TRANSCRIPT_FILE: R1-2.srt
 
 >>> UNIT: Recitation Summary
 >>> COMPONENT: TEXT
+CONCEPT: 
+QUALIFIER: 
 TITLE: 
 BODY:
 You can open the notebook and load a price series.
@@ -202,6 +236,8 @@ SEQUENTIAL: Assignment 1: First Forecast
 
 >>> UNIT: Assignment Overview
 >>> COMPONENT: TEXT
+CONCEPT: 
+QUALIFIER: 
 TITLE: 
 BODY:
 Build and evaluate a baseline forecaster. Submit your notebook and answers below.
@@ -209,6 +245,8 @@ Build and evaluate a baseline forecaster. Submit your notebook and answers below
 
 >>> UNIT: Assignment 1: Part 1
 >>> COMPONENT: PROBLEM
+CONCEPT: Baseline RMSE
+QUALIFIER: 
 TITLE: 
 PROBLEM_TYPE: numerical
 QUESTION:
@@ -223,6 +261,8 @@ HINT:
 
 >>> UNIT: Assignment 1: Part 2
 >>> COMPONENT: PROBLEM
+CONCEPT: Beating the baseline
+QUALIFIER: 
 TITLE: 
 PROBLEM_TYPE: text_input
 QUESTION:
@@ -236,6 +276,8 @@ HINT:
 
 >>> UNIT: Assignment Summary
 >>> COMPONENT: TEXT
+CONCEPT: 
+QUALIFIER: 
 TITLE: 
 BODY:
 Submit your notebook and your two answers above. Grading is based on a working baseline and clear reasoning.
@@ -251,6 +293,8 @@ SEQUENTIAL: Module Summary
 
 >>> UNIT: Module Summary
 >>> COMPONENT: TEXT
+CONCEPT: 
+QUALIFIER: 
 TITLE: Module Summary
 BODY:
 You covered *foundations*, *evaluation*, *forecasting*, and _model risk_.
@@ -260,6 +304,8 @@ Next up: [portfolio construction](https://example.edu/uai/next).
 
 >>> UNIT: Thank You
 >>> COMPONENT: VIDEO
+CONCEPT: Course wrap-up
+QUALIFIER: 
 TITLE: Thank you and next steps
 VIDEO_URL: E-4aGqg69TI
 TRANSCRIPT_FILE: outro.srt

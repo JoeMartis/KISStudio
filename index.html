@@ -441,11 +441,7 @@ function renderOutline(){
       nav.appendChild(olBtn('ol-seq',s.title||'(untitled subsection)','[data-seq="'+s.id+'"]'));
       s.units.forEach(u=>{
         nav.appendChild(olBtn('ol-unit',u.title||'(untitled unit)','[data-unit="'+u.id+'"]'));
-        u.comps.forEach(c=>{
-          const k={TEXT:'Text',VIDEO:'Video',PROBLEM:'Problem'}[c.kind]||c.kind;
-          const label=(c.title&&c.title.trim())? k+' · '+c.title.trim() : k;
-          nav.appendChild(olBtn('ol-comp',label,'[data-comp="'+c.id+'"]'));
-        });
+        u.comps.forEach(c=>nav.appendChild(olBtn('ol-comp',componentName(c,u,ch),'[data-comp="'+c.id+'"]')));
       });
     });
   });
@@ -692,6 +688,12 @@ function renderComp(c,u){
   wrap.appendChild(head);
 
   const body=el('div','comp-body');
+  // Library name is concept-first: "<Concept> — <Type> [qualifier]". The concept
+  // is the searchable term a builder would type; the type is derived from the kind.
+  const crow=el('div','comp-row');
+  crow.appendChild(fieldText("Concept (library name)",c.concept||"",v=>c.concept=v,false,"e.g. Backpropagation — the word a builder would search"));
+  crow.appendChild(fieldText("Qualifier (optional)",c.qualifier||"",v=>c.qualifier=v,false,"e.g. chain rule step"));
+  body.appendChild(crow);
   if(c.kind==="TEXT"){
     body.appendChild(fieldText("Title",c.title||"",v=>c.title=v,false,"Optional heading"));
     body.appendChild(fieldText("Body",c.body||"",v=>c.body=v,true,"Write prose. *bold*, _italic_, [text](url), [[image: file.png | alt]]"));
@@ -826,6 +828,8 @@ function serialize(){
         L.push(">>> UNIT: "+one(u.title));
         u.comps.forEach(c=>{
           L.push(">>> COMPONENT: "+c.kind);
+          L.push("CONCEPT: "+one(c.concept));
+          L.push("QUALIFIER: "+one(c.qualifier));
           if(c.kind==="TEXT"){
             L.push("TITLE: "+one(c.title));
             pushBlock(L,"BODY",c.body);
@@ -1087,6 +1091,8 @@ function parseTemplate(text){
       if(f){
         const key=f[1], val=f[2];
         if(key==="TITLE")curComp.title=val;
+        else if(key==="CONCEPT")curComp.concept=val;
+        else if(key==="QUALIFIER")curComp.qualifier=val;
         else if(key==="BODY")curComp.body=val;
         else if(key==="VIDEO_URL")curComp.url=val;
         else if(key==="TRANSCRIPT_FILE")curComp.transcript=val;
@@ -1153,6 +1159,7 @@ function compFromParsed(c){
       out.answer=c.answer||""; out.tolerance=c.tolerance||"";
     }
   }
+  out.concept=c.concept||""; out.qualifier=c.qualifier||"";   // library naming, all kinds
   return out;
 }
 
@@ -1297,15 +1304,20 @@ function mdToHtml(body){
 // A flat library has no hierarchy, so component display names must stand alone.
 // Convention: "<unit title> · <type label>" — unique, sortable, and shared by
 // both the OLX export (so pasted blocks arrive pre-named) and the checklist.
-function componentLabel(c){
-  if(c.kind==="TEXT") return (c.title||"").trim() || "Text";
-  if(c.kind==="VIDEO") return "Video"+((c.title||"").trim()?": "+c.title.trim():"");
-  const t=(c.title||"").trim();
-  if(t) return "Problem: "+t;
-  const q=(c.question||"").replace(/[*_`>#]/g,"").replace(/\s+/g," ").trim();
-  return "Problem"+(q?": "+(q.length>50?q.slice(0,50).trim()+"...":q):"");
+// Type from the fixed convention vocabulary, derived from the kind (and grading).
+function componentType(c,ch){
+  if(c.kind==="VIDEO") return "Lecture";
+  if(c.kind==="TEXT") return "Reading";
+  return (ch&&ch.kind==="assignments") ? "Problem" : "KC";   // graded problems vs knowledge checks
 }
-function componentName(c,u){ return ((u&&u.title)||"Unit").trim()+" - "+componentLabel(c); }
+// Concept-first name: "<Concept> — <Type> [qualifier]". Falls back to title/unit
+// when no concept is set yet (the checklist reports concept coverage).
+function componentName(c,u,ch){
+  const type=componentType(c,ch);
+  const base=(c.concept||"").trim() || (c.title||"").trim() || ((u&&u.title)||"").trim() || "Untitled";
+  const qual=(c.qualifier||"").trim();
+  return base+" — "+type+(qual?" ("+qual+")":"");
+}
 
 function olxProblem(c,dn){
   const opts=c.options||[];
@@ -1351,7 +1363,7 @@ function buildOlx(st){
       s.units.forEach(u=>{
         const vu="vert"+(++n.vt); vtRefs.push(vu); const kids=[];
         u.comps.forEach(c=>{
-          const dn=componentName(c,u);   // aligns with the library checklist
+          const dn=componentName(c,u,ch);   // aligns with the library checklist
           if(c.kind==="TEXT"){
             const id="html"+(++n.h);
             P("html/"+id+".html",(c.title?('<h3>'+xmlText(c.title)+'</h3>\n'):'')+mdToHtml(c.body)+"\n");
@@ -1423,74 +1435,84 @@ async function exportOlx(){
 }
 window.__olx=exportOlx;
 
-/* ---------- Library checklist (hidden, with #olx) -------------------- */
-// One row per component for the manual paste into a v2 Content Library:
-// one Library (the module), a Collection per chapter, and a stand-alone name.
+/* ---------- Library worksheet (hidden, with #olx) -------------------- */
+// Naming + tagging worksheet for the EDM model: one program/org Library, the
+// module as a Collection, and the chapter as a Work-segment tag. Auto-fills the
+// derivable taxonomies (work segment, modality, status); the rest are blank for
+// the team to fill while tagging at the library source.
+const MODALITY={TEXT:"Text / HTML",VIDEO:"Video",PROBLEM:"Problem (CAPA)"};
 function buildChecklist(st){
-  const lib=(st.meta.DISPLAY_NAME||"Module").trim()||"Module";
-  const rows=[]; const counts={TEXT:0,VIDEO:0,PROBLEM:0}; const collections=new Set();
+  const library=(st.meta.ORG||"Program").trim()||"Program";   // 1 library per program/org
+  const collection=(st.meta.DISPLAY_NAME||"Module").trim()||"Module"; // module = collection
+  const rows=[]; const counts={TEXT:0,VIDEO:0,PROBLEM:0}; const segments=new Set(); let withConcept=0;
   st.chapters.forEach(ch=>{
-    collections.add(ch.name);
+    segments.add(ch.name);
     ch.seqs.forEach(s=>s.units.forEach(u=>u.comps.forEach(c=>{
       counts[c.kind]=(counts[c.kind]||0)+1;
+      const concept=(c.concept||"").trim(); if(concept) withConcept++;
       rows.push({
-        library:lib, collection:ch.name,
-        location:ch.name+" > "+(s.title||"")+" > "+(u.title||""),
-        type:c.kind.charAt(0)+c.kind.slice(1).toLowerCase(),
-        name:componentName(c,u)
+        library, collection, segment:ch.name,
+        type:componentType(c,ch), modality:MODALITY[c.kind]||c.kind,
+        name:componentName(c,u,ch), concept, status:"Not started",
+        location:ch.name+" > "+(s.title||"")+" > "+(u.title||"")
       });
     })));
   });
-  return {lib, rows, counts, collections:[...collections]};
+  return {library, collection, rows, counts, segments:[...segments], withConcept};
 }
 function checklistCsv(st){
   const {rows}=buildChecklist(st);
   const cell=v=>{v=v==null?"":(""+v); return /[",\n\r]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;};
-  const head=["Library","Collection","Location","Type","Suggested name","Pasted?","QA'd?","Owner","Notes"];
+  const head=["Library (program/org)","Collection (module)","Work segment","Type","Modality","Suggested name","Concept","Status","Owning team","Clearance","LD tags","Location","In library?","Notes"];
   const lines=[head.join(",")];
-  rows.forEach(r=>lines.push([r.library,r.collection,r.location,r.type,r.name,"","","",""].map(cell).join(",")));
+  rows.forEach(r=>lines.push([r.library,r.collection,r.segment,r.type,r.modality,r.name,r.concept,r.status,"","","",r.location,"",""].map(cell).join(",")));
   return lines.join("\r\n");
 }
 function showChecklist(){
   serialize();                                     // sync meta from DOM
-  const {lib, rows, counts, collections}=buildChecklist(st0());
-  const slug=idSan(lib.toLowerCase().replace(/\s+/g,"-"),"module",80);
+  const {library, collection, rows, counts, segments, withConcept}=buildChecklist(st0());
+  const slug=idSan((library+"-"+collection).toLowerCase().replace(/\s+/g,"-"),"module",80);
   let back=document.getElementById('cl-back');
   if(!back){ back=document.createElement('div'); back.id='cl-back'; back.className='cl-back'; document.body.appendChild(back);
     back.addEventListener('click',e=>{ if(e.target===back) back.remove(); }); }
   back.innerHTML="";
   const card=el('div','cl-card'); back.appendChild(card);
   const head=el('div','cl-head');
-  head.innerHTML='<div><b>Library checklist</b> — paste targets for a v2 Content Library</div>';
+  head.innerHTML='<div><b>Library worksheet</b> — naming &amp; tagging for a v2 Content Library</div>';
   const x=el('button','btn','✕'); x.style.cssText="padding:4px 10px"; x.onclick=()=>back.remove(); head.appendChild(x);
   card.appendChild(head);
   const sum=el('div','cl-sum');
-  sum.textContent='Library: "'+lib+'"   |   '+collections.length+' collections (one per chapter)   |   '+rows.length+' components ('+(counts.TEXT||0)+' text, '+(counts.VIDEO||0)+' video, '+(counts.PROBLEM||0)+' problem)';
+  sum.textContent='Library: "'+library+'"   |   Collection (module): "'+collection+'"   |   '+rows.length+' components ('+(counts.TEXT||0)+' text, '+(counts.VIDEO||0)+' video, '+(counts.PROBLEM||0)+' problem)   |   concepts set: '+withConcept+'/'+rows.length+'   |   '+segments.length+' work segments';
   card.appendChild(sum);
-  // table — grouped by collection (chapter) with subheaders
+  // table — grouped by Work segment (chapter); names flagged when concept is missing
   const wrap=el('div','cl-tablewrap'); const tbl=document.createElement('table'); tbl.className='cl-table';
-  const thead=document.createElement('thead'); thead.innerHTML='<tr><th>#</th><th>Type</th><th>Suggested name</th><th>Location</th></tr>'; tbl.appendChild(thead);
-  const tb=document.createElement('tbody'); let lastCol=null;
+  const thead=document.createElement('thead'); thead.innerHTML='<tr><th>#</th><th>Type</th><th>Modality</th><th>Suggested name</th><th>Status</th><th>Location</th></tr>'; tbl.appendChild(thead);
+  const tb=document.createElement('tbody'); let lastSeg=null;
   rows.forEach((r,i)=>{
-    if(r.collection!==lastCol){
-      lastCol=r.collection;
-      const cnt=rows.filter(x=>x.collection===r.collection).length;
+    if(r.segment!==lastSeg){
+      lastSeg=r.segment;
+      const cnt=rows.filter(x=>x.segment===r.segment).length;
       const gtr=document.createElement('tr'); gtr.className='cl-group';
-      const gtd=document.createElement('td'); gtd.colSpan=4;
-      gtd.textContent="Collection: "+r.collection+"   ("+cnt+" component"+(cnt>1?"s":"")+")";
+      const gtd=document.createElement('td'); gtd.colSpan=6;
+      gtd.textContent="Work segment: "+r.segment+"   ("+cnt+" component"+(cnt>1?"s":"")+")";
       gtr.appendChild(gtd); tb.appendChild(gtr);
     }
     const tr=document.createElement('tr');
-    [String(i+1),r.type,r.name,r.location].forEach((v,ci)=>{ const td=document.createElement('td'); td.textContent=v; if(ci===0)td.className='cl-n'; tr.appendChild(td); });
+    [String(i+1),r.type,r.modality,r.name,r.status,r.location].forEach((v,ci)=>{
+      const td=document.createElement('td'); td.textContent=v;
+      if(ci===0)td.className='cl-n';
+      if(ci===3 && !r.concept){ td.title="No Concept set — name is a fallback"; td.style.color="var(--warn)"; td.textContent=v+"  ⚠ needs concept"; }
+      tr.appendChild(td);
+    });
     tb.appendChild(tr);
   });
   tbl.appendChild(tb); wrap.appendChild(tbl); card.appendChild(wrap);
   // footer
   const foot=el('div','cl-foot');
   const dl=el('button','btn-primary','Download CSV');
-  dl.onclick=()=>{ const blob=new Blob([String.fromCharCode(0xFEFF)+checklistCsv(st0())],{type:"text/csv;charset=utf-8"}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=slug+"_library_checklist.csv"; a.click(); toast("Downloaded "+a.download); };
+  dl.onclick=()=>{ const blob=new Blob([String.fromCharCode(0xFEFF)+checklistCsv(st0())],{type:"text/csv;charset=utf-8"}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=slug+"_library_worksheet.csv"; a.click(); toast("Downloaded "+a.download); };
   const cp=el('button','btn','Copy table');
-  cp.onclick=()=>{ const tsv=["#\tCollection\tType\tSuggested name\tLocation",...rows.map((r,i)=>(i+1)+"\t"+r.collection+"\t"+r.type+"\t"+r.name+"\t"+r.location)].join("\n");
+  cp.onclick=()=>{ const tsv=["#\tWork segment\tType\tModality\tSuggested name\tConcept\tStatus\tLocation",...rows.map((r,i)=>(i+1)+"\t"+r.segment+"\t"+r.type+"\t"+r.modality+"\t"+r.name+"\t"+r.concept+"\t"+r.status+"\t"+r.location)].join("\n");
     const ok=()=>{cp.textContent="Copied ✓";setTimeout(()=>cp.textContent="Copy table",1400);};
     if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(tsv).then(ok).catch(()=>toast("Couldn't copy — use Download CSV.")); else toast("Couldn't copy — use Download CSV."); };
   foot.appendChild(cp); foot.appendChild(dl);
