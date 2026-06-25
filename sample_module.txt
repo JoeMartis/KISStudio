@@ -57,7 +57,7 @@ A *model* maps inputs (features) to outputs (predictions). Training fits the map
 
 >>> COMPONENT: VIDEO
 TITLE: Models in 4 minutes
-VIDEO_URL: https://videos.uai.edu/fin/L1-1.mp4
+VIDEO_URL: https://www.youtube.com/watch?v=E-4aGqg69TI
 TRANSCRIPT_FILE: L1-1.srt
 DURATION: 4:12
 
@@ -127,7 +127,7 @@ A naive forecast predicts tomorrow equals today. Good models must beat that base
 
 >>> COMPONENT: VIDEO
 TITLE: Baselines matter
-VIDEO_URL: https://videos.uai.edu/fin/L2-1.mp4
+VIDEO_URL: https://www.youtube.com/watch?v=E-4aGqg69TI
 TRANSCRIPT_FILE: L2-1.srt
 DURATION: 5:03
 
@@ -169,14 +169,14 @@ A walkthrough of the notebook environment used in assignments.
 >>> UNIT: R1.1 Setting up the notebook
 >>> COMPONENT: VIDEO
 TITLE: Notebook setup
-VIDEO_URL: https://videos.uai.edu/fin/R1-1.mp4
+VIDEO_URL: https://www.youtube.com/watch?v=E-4aGqg69TI
 TRANSCRIPT_FILE: R1-1.srt
 DURATION: 6:20
 
 >>> UNIT: R1.2 Loading market data
 >>> COMPONENT: VIDEO
 TITLE: Loading data
-VIDEO_URL: https://videos.uai.edu/fin/R1-2.mp4
+VIDEO_URL: https://www.youtube.com/watch?v=E-4aGqg69TI
 TRANSCRIPT_FILE: R1-2.srt
 DURATION: 7:45
 
@@ -254,7 +254,7 @@ You covered foundations, evaluation, forecasting, and model risk. Next: portfoli
 >>> UNIT: Thank You
 >>> COMPONENT: VIDEO
 TITLE: Thank you and next steps
-VIDEO_URL: https://videos.uai.edu/fin/outro.mp4
+VIDEO_URL: https://www.youtube.com/watch?v=E-4aGqg69TI
 TRANSCRIPT_FILE: outro.srt
 DURATION: 1:30
 
