@@ -218,14 +218,14 @@
   .preview-card.light .preview .v{color:var(--ink)}
   .preview-card.light .preview .h{color:var(--navy)}
   .preview-card.light .preview .rule{border-top-color:var(--line)}
-  .preview-card.light .preview .ln.empty .k,.preview-card.light .preview .ln.empty .v{color:#9aa7b4}
+  .preview-card.light .preview .ln.empty .k,.preview-card.light .preview .ln.empty .v{color:#67727e}
   .preview-card.light .preview-foot{border-top:1px solid var(--line);background:#f9fbfd}
   .preview-card.light .issues{background:#f8fafc;border-top:1px solid var(--line);color:var(--ink)}
   .preview-card.light .issues .ok{color:var(--good)}
   .preview-card.light .issues .ihead{color:var(--ink-soft)}
   .preview-card.light .issues .imsg{color:#b4500f}
   .preview-card.light .issues .imsg::before{color:var(--accent)}
-  .preview-card.light .issues .where{color:#8a98a6}
+  .preview-card.light .issues .where{color:#66717e}
   .preview-card.light .issues .irow:hover{background:#eef2f7}
 
   .legend{font-size:12px;color:var(--ink-soft);margin-top:14px;background:var(--card);border:1px solid var(--line);border-radius:9px;padding:12px 14px}
@@ -301,7 +301,7 @@
           <span class="ttl">module_authoring_template.txt</span>
           <span class="pv-right">
             <button id="themeToggle" class="pv-theme" type="button" aria-label="Switch to dark">🌙</button>
-            <span class="dot"><i style="background:#ff5f56"></i><i style="background:#ffbd2e"></i><i style="background:#27c93f"></i></span>
+            <span class="dot" aria-hidden="true"><i style="background:#ff5f56"></i><i style="background:#ffbd2e"></i><i style="background:#27c93f"></i></span>
           </span>
         </div>
         <div class="preview" id="preview"></div>
@@ -401,6 +401,7 @@ function markDirty(){ if(appReady) dirty=true; }
 
 function render(){
   const sy=window.scrollY;                   // preserve scroll across the full rebuild
+  dragCtx=null;                              // a rebuild invalidates any in-flight drag
   domId=0;
   chaptersEl.innerHTML="";
   state.chapters.forEach(ch=>chaptersEl.appendChild(renderChapter(ch)));
@@ -566,6 +567,7 @@ function renderSeq(s,ch){
   const removable = !s.fixed && ch.seqs.indexOf(s)>0;
   if(removable){
     const del=el('button','btn-icon btn-danger','✕ remove');
+    del.setAttribute("aria-label","Remove subsection");
     del.onclick=()=>{ch.seqs=ch.seqs.filter(x=>x!==s);afterRender=()=>focusSel('[data-chapter="'+ch.kind+'"] .btn-add');render()};
     head.appendChild(el('span','row-actions')).appendChild(del);
   }
@@ -658,10 +660,11 @@ function renderUnit(u,s,ch){
 function renderComp(c,u){
   const wrap=el('div','comp'); wrap.dataset.comp=c.id;
   const head=el('div','comp-head');
-  head.innerHTML=`<span class="comp-diamond">◆</span><span class="comp-kind">${c.kind}</span>`;
+  head.innerHTML=`<span class="comp-diamond">◆</span><span class="comp-kind"></span>`;
+  head.querySelector('.comp-kind').textContent=c.kind;   // textContent: never interpolate raw into innerHTML
   if(u.comps.length>1)
     head.insertBefore(makeDraggable(wrap,c,u.comps,{handleSel:()=>'[data-comp="'+c.id+'"] .drag'}),head.firstChild);
-  if(!u.fixed || u.comps.length>1){
+  if(u.comps.length>1){   // never allow deleting the last component (delete the unit instead)
     const del=el('button','btn-icon btn-danger','✕');
     del.title="Remove component"; del.setAttribute("aria-label","Remove component");
     del.onclick=()=>{u.comps=u.comps.filter(x=>x!==c);afterRender=()=>{focusSel('[data-unit="'+u.id+'"] .add-row button')||focusSel('[data-unit="'+u.id+'"] input,[data-unit="'+u.id+'"] textarea')};render()};
@@ -785,50 +788,54 @@ function pushBlock(L,key,val){
 function serialize(){
   // bind meta inputs
   document.querySelectorAll('[data-meta]').forEach(i=>state.meta[i.dataset.meta]=i.value);
+  // Single-line fields must never contain a newline, or a value could forge a
+  // structural line on re-parse. Inputs strip newlines today; this guards any
+  // future paste/programmatic path.
+  const one=v=>(v==null?"":(""+v)).replace(/[\r\n]+/g," ");
   const L=[];
   L.push(bar(),"MODULE AUTHORING TEMPLATE",bar(),"");
   L.push(bar(),"MODULE",bar());
-  L.push("DISPLAY_NAME: "+state.meta.DISPLAY_NAME);
-  L.push("COURSE_ID: "+state.meta.COURSE_ID);
-  L.push("ORG: "+state.meta.ORG);
-  L.push("RUN: "+state.meta.RUN);
-  L.push("SHORT_DESCRIPTION: "+state.meta.SHORT_DESCRIPTION);
+  L.push("DISPLAY_NAME: "+one(state.meta.DISPLAY_NAME));
+  L.push("COURSE_ID: "+one(state.meta.COURSE_ID));
+  L.push("ORG: "+one(state.meta.ORG));
+  L.push("RUN: "+one(state.meta.RUN));
+  L.push("SHORT_DESCRIPTION: "+one(state.meta.SHORT_DESCRIPTION));
   L.push("");
 
   state.chapters.forEach(ch=>{
     L.push(bar(),"CHAPTER: "+ch.name,bar(),"");
     ch.seqs.forEach(s=>{
-      L.push(dash(),"SEQUENTIAL: "+s.title,dash(),"");
+      L.push(dash(),"SEQUENTIAL: "+one(s.title),dash(),"");
       s.units.forEach(u=>{
-        L.push(">>> UNIT: "+u.title);
+        L.push(">>> UNIT: "+one(u.title));
         u.comps.forEach(c=>{
           L.push(">>> COMPONENT: "+c.kind);
           if(c.kind==="TEXT"){
-            L.push("TITLE: "+(c.title||""));
+            L.push("TITLE: "+one(c.title));
             pushBlock(L,"BODY",c.body);
           }
           if(c.kind==="VIDEO"){
-            L.push("TITLE: "+(c.title||""));
-            L.push("VIDEO_URL: "+(c.url||""));
-            L.push("TRANSCRIPT_FILE: "+(c.transcript||""));
-            L.push("DURATION: "+(c.duration||""));
+            L.push("TITLE: "+one(c.title));
+            L.push("VIDEO_URL: "+one(c.url));
+            L.push("TRANSCRIPT_FILE: "+one(c.transcript));
+            L.push("DURATION: "+one(c.duration));
           }
           if(c.kind==="PROBLEM"){
-            L.push("TITLE: "+(c.title||""));
+            L.push("TITLE: "+one(c.title));
             L.push("PROBLEM_TYPE: "+c.ptype);
             pushBlock(L,"QUESTION",c.question);
             if(["multiple_choice","checkboxes","dropdown"].includes(c.ptype)){
               L.push("OPTIONS:");
               c.options.forEach(o=>{
                 const m = c.ptype==="checkboxes" ? (o.correct?"[x]":"[ ]") : (o.correct?"(x)":"( )");
-                L.push("- "+m+" "+o.t);
+                L.push("- "+m+" "+one(o.t));
               });
             } else {
-              L.push("ANSWER: "+(c.answer||""));
-              if(c.ptype==="numerical")L.push("TOLERANCE: "+(c.tolerance||""));
+              L.push("ANSWER: "+one(c.answer));
+              if(c.ptype==="numerical")L.push("TOLERANCE: "+one(c.tolerance));
             }
             pushBlock(L,"EXPLANATION",c.explanation);
-            L.push("HINT: "+(c.hint||""));
+            L.push("HINT: "+one(c.hint));
           }
           L.push("");
         });
@@ -872,7 +879,9 @@ function validate(){
   const issues=[];
   if(!state.meta.DISPLAY_NAME.trim()) issues.push({where:"Module details",msg:"Missing display name",sel:".meta-card"});
   if(!state.meta.COURSE_ID.trim())    issues.push({where:"Module details",msg:"Missing course ID",sel:".meta-card"});
-  state.chapters.forEach(ch=>ch.seqs.forEach(s=>s.units.forEach(u=>u.comps.forEach(c=>{
+  state.chapters.forEach(ch=>ch.seqs.forEach(s=>s.units.forEach(u=>{
+    if(!u.comps.length) issues.push({where:ch.name+" › "+(u.title||"untitled unit"),msg:"Unit has no components",sel:'[data-unit="'+u.id+'"]'});
+    u.comps.forEach(c=>{
     const at=ch.name+" › "+(u.title||"untitled unit");
     const sel='[data-comp="'+c.id+'"]';
     const add=msg=>issues.push({where:at,msg,sel});
@@ -890,7 +899,8 @@ function validate(){
         add("Problem has no answer");
       }
     }
-  }))));
+    });
+  })));
   return issues;
 }
 
@@ -1003,7 +1013,7 @@ function parseTemplate(text){
       flushBody();
       const kind=line.replace(/^>>>\s*COMPONENT:\s*/,"").trim().toUpperCase();
       curComp={kind};
-      if(kind==="PROBLEM"){curComp.options=[];curComp.ptype="multiple_choice";}
+      if(kind==="PROBLEM"){curComp.options=[];curComp.ptype="";}  // set only from PROBLEM_TYPE; lets [x] markers infer checkboxes
       if(curUnit) curUnit.comps.push(curComp);
       continue;
     }
@@ -1032,7 +1042,7 @@ function parseTemplate(text){
         let val;
         if(fenceAt!==-1){
           const out=[]; for(let k=i+1;k<fenceAt;k++)out.push(unescBlockLine(lines[k]));
-          val=out.join("\n").replace(/\s+$/,""); i=fenceAt; // step past the fence
+          val=out.join("\n"); i=fenceAt; // step past the fence — content is exact, no trimming
         } else {
           // Legacy (unfenced) file: stop at the next field/marker/rule, no unescape.
           const out=[]; let k=i+1;
@@ -1107,10 +1117,13 @@ function stateFromParsed(parsed){
 }
 
 function compFromParsed(c){
-  const out=comp(c.kind);
-  if(c.kind==="TEXT"){ out.title=c.title||""; out.body=c.body||""; }
-  if(c.kind==="VIDEO"){ out.title=c.title||""; out.url=c.url||""; out.transcript=c.transcript||""; out.duration=c.duration||""; }
-  if(c.kind==="PROBLEM"){
+  // Whitelist the kind from an imported file — anything else (incl. injection
+  // payloads) collapses to a plain TEXT component.
+  const kind=["TEXT","VIDEO","PROBLEM"].includes((c.kind||"").toUpperCase())?(c.kind||"").toUpperCase():"TEXT";
+  const out=comp(kind);
+  if(kind==="TEXT"){ out.title=c.title||""; out.body=c.body||""; }
+  if(kind==="VIDEO"){ out.title=c.title||""; out.url=c.url||""; out.transcript=c.transcript||""; out.duration=c.duration||""; }
+  if(kind==="PROBLEM"){
     out.title=c.title||"";
     out.ptype = PROBLEM_TYPES.includes(c.ptype) ? c.ptype : (c._checkbox?"checkboxes":"multiple_choice");
     out.question=c.question||"";
