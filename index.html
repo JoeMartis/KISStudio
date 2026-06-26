@@ -1216,6 +1216,9 @@ function parseTemplate(text){
   return {meta,chapters};
 }
 
+// Sections from an imported file that didn't fit the fixed skeleton and were
+// skipped — surfaced by importText so the drop is never silent.
+let lastImportWarnings=[];
 // Rebuild a clean state object from parsed data, reasserting skeleton rules.
 function stateFromParsed(parsed){
   uid=1;
@@ -1223,8 +1226,15 @@ function stateFromParsed(parsed){
   // meta
   Object.keys(blank.meta).forEach(k=>{ if(parsed.meta[k]!=null) blank.meta[k]=parsed.meta[k]; });
 
-  // index parsed chapters by name
-  const byName={}; parsed.chapters.forEach(c=>byName[c.name]=c);
+  // index parsed chapters by name; record any that can't map onto the fixed
+  // layout (unknown heading) or collide (duplicate heading) — those are dropped.
+  const canon=new Set(blank.chapters.map(c=>c.name)); const byName={}; const seen=new Set(); const skipped=[];
+  parsed.chapters.forEach(c=>{
+    if(!canon.has(c.name)){ if(!skipped.includes(c.name)) skipped.push(c.name); }
+    else if(seen.has(c.name)){ skipped.push(c.name+" (duplicate heading)"); }
+    seen.add(c.name); byName[c.name]=c;
+  });
+  lastImportWarnings=skipped;
 
   blank.chapters.forEach(ch=>{
     const src=byName[ch.name];
@@ -1283,7 +1293,12 @@ function importText(text){
     bindMeta(); render();
   }catch(err){ toast("Couldn't rebuild the module from that file."); return; }
   dirty=false;   // in-memory state now matches the imported file
-  toast("Imported — resume editing where you left off.");
+  if(lastImportWarnings.length){
+    const n=lastImportWarnings.length;
+    toast("Imported, but skipped "+n+" section"+(n>1?"s":"")+" that didn't match the expected layout (Introduction / Lectures / Recitations / Assignments / Conclusion): "+lastImportWarnings.join(", "));
+  } else {
+    toast("Imported — resume editing where you left off.");
+  }
 }
 
 /* ---------- Actions -------------------------------------------------- */
