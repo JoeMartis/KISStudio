@@ -174,6 +174,10 @@
   .opt .marker{width:34px;height:32px;display:flex;align-items:center;justify-content:center;border:1px solid var(--line);border-radius:6px;cursor:pointer;background:#fff;color:var(--ink-soft);font-family:var(--mono);font-size:13px}
   .opt .marker.on{background:var(--good);border-color:var(--good);color:#fff}
   .opt-add{align-self:flex-start;font-size:12px;color:var(--blue);background:transparent;border:none;padding:4px 0;font-weight:600}
+  /* inline-dropdown editor */
+  .dd{border:1px solid var(--line-soft);border-radius:8px;padding:8px 10px;margin-bottom:8px;background:#fcfdfe}
+  .dd-head{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+  .dd-tag{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--accent);background:var(--accent-soft);border:1px solid #e8b89c;padding:2px 7px;border-radius:5px}
 
   .row-actions{margin-left:auto;display:flex;gap:2px}
   .add-row{display:flex;gap:8px;margin-top:6px}
@@ -343,7 +347,8 @@
 
 <script>
 /* ---------- Model ---------------------------------------------------- */
-const PROBLEM_TYPES = ["multiple_choice","checkboxes","dropdown","numerical","text_input"];
+const PROBLEM_TYPES = ["multiple_choice","checkboxes","dropdown","inline_dropdown","numerical","text_input"];
+const newDropdown=()=>({options:[{t:"",correct:false},{t:"",correct:true}]});
 
 // Fixed chapter skeleton. Each chapter declares what authors may add inside it.
 function seedState(){
@@ -372,7 +377,7 @@ function seq(title,units,fixed=false){return{id:nid(),title,units,fixed}}
 function unit(title,fixed,comps){return{id:nid(),title,fixed:!!fixed,comps}}
 function comp(kind,extra={}){
   const c={id:nid(),kind};
-  if(kind==="PROBLEM"){c.ptype="multiple_choice";c.options=[{t:"",correct:false},{t:"",correct:true},{t:"",correct:false}];c.answer="";c.tolerance=""}
+  if(kind==="PROBLEM"){c.ptype="multiple_choice";c.options=[{t:"",correct:false},{t:"",correct:true},{t:"",correct:false}];c.answer="";c.tolerance="";c.dropdowns=[]}
   return Object.assign(c,extra);
 }
 function lectureSeq(n){
@@ -723,10 +728,16 @@ function renderComp(c,u,ch){
     sel.onchange=e=>{c.ptype=e.target.value;render()};
     f.appendChild(sel); body.appendChild(f);
 
-    body.appendChild(fieldText("Question",c.question||"",v=>c.question=v,true,"Supports *bold*, _italic_, [text](url), [[image: file.png | alt]], - lists"));
+    if(c.ptype==="inline_dropdown"){
+      body.appendChild(fieldText("Body — put [[1]], [[2]] … where each dropdown goes (pipe tables OK)",c.question||"",v=>c.question=v,true,"A mutation in gene1 results in [[1]] product.   |   table:  | allele | impact |\\n| --- | --- |\\n| Null | [[2]] |",false,c.id+":q"));
+    } else {
+      body.appendChild(fieldText("Question",c.question||"",v=>c.question=v,true,"Supports *bold*, _italic_, [text](url), [[image: file.png | alt]], - lists"));
+    }
 
     if(c.ptype==="multiple_choice"||c.ptype==="checkboxes"||c.ptype==="dropdown"){
       body.appendChild(renderOptions(c));
+    } else if(c.ptype==="inline_dropdown"){
+      body.appendChild(renderDropdowns(c));
     } else { // numerical / text_input
       const row=el('div','comp-row');
       row.appendChild(fieldText("Answer",c.answer||"",v=>c.answer=v,false,"",true));
@@ -778,6 +789,55 @@ function renderOptions(c){
 function markerGlyph(ptype,on){
   if(ptype==="checkboxes")return on?"☑":"☐";
   return on?"●":"○";
+}
+
+// Multi-dropdown editor: each dropdown maps to its [[n]] token in the body.
+function renderDropdowns(c){
+  if(!c.dropdowns||!c.dropdowns.length) c.dropdowns=[newDropdown()];
+  const f=el('div','field');
+  const cap=el('div','lbl'); cap.textContent="Dropdowns — each [[n]] token in the body becomes dropdown n; tap the marker for the correct option"; f.appendChild(cap);
+  c.dropdowns.forEach((dd,di)=>{
+    const box=el('div','dd');
+    const hd=el('div','dd-head');
+    hd.appendChild(el('span','dd-tag','[['+(di+1)+']]'));
+    if(c.dropdowns.length>1){
+      const del=el('button','btn-icon btn-danger','✕ remove'); del.setAttribute('aria-label','Remove dropdown '+(di+1));
+      del.onclick=()=>{c.dropdowns.splice(di,1);render()};
+      const ra=el('span','row-actions'); ra.appendChild(del); hd.appendChild(ra);
+    }
+    box.appendChild(hd);
+    const list=el('div','opts');
+    dd.options.forEach((o,i)=>{
+      const row=el('div','opt');
+      const mk=el('button','marker'+(o.correct?' on':''),markerGlyph('dropdown',o.correct));
+      mk.title="Set correct"; mk.setAttribute('aria-label',(o.correct?'Correct — ':'Mark correct — ')+'dropdown '+(di+1)+' option '+(i+1)); mk.setAttribute('aria-pressed',o.correct?'true':'false');
+      mk.onclick=()=>{dd.options.forEach(x=>x.correct=false);o.correct=true;render()};
+      const inp=document.createElement('input'); inp.type='text'; inp.value=o.t; inp.placeholder='Option '+(i+1);
+      inp.setAttribute('aria-label','Dropdown '+(di+1)+' option '+(i+1)); inp.dataset.k=c.id+':dd'+di+':'+i;
+      inp.oninput=e=>{o.t=e.target.value;markDirty();renderPreview()};
+      row.appendChild(mk); row.appendChild(inp);
+      if(dd.options.length>2){
+        const del=el('button','btn-icon btn-danger','✕'); del.setAttribute('aria-label','Remove option '+(i+1));
+        del.onclick=()=>{dd.options.splice(i,1);afterRender=()=>focusKey(c.id+':dd'+di+':'+Math.min(i,dd.options.length-1));render()};
+        row.appendChild(del);
+      }
+      list.appendChild(row);
+    });
+    const add=el('button','opt-add','+ Add option');
+    add.onclick=()=>{dd.options.push({t:'',correct:false});afterRender=()=>focusKey(c.id+':dd'+di+':'+(dd.options.length-1));render()};
+    box.appendChild(list); box.appendChild(add);
+    f.appendChild(box);
+  });
+  const ins=el('button','opt-add','+ Insert dropdown');
+  ins.onclick=()=>{
+    const n=c.dropdowns.length+1; c.dropdowns.push(newDropdown());
+    const ta=document.querySelector('[data-k="'+c.id+':q"]'); const q=c.question||"";
+    const p=(ta&&ta.selectionStart!=null)?ta.selectionStart:q.length;
+    c.question=q.slice(0,p)+"[["+n+"]]"+q.slice(p);
+    render();
+  };
+  f.appendChild(ins);
+  return f;
 }
 
 function fieldText(label,val,onset,area=false,ph="",mono=false,key=null){
@@ -852,7 +912,12 @@ function serialize(){
             L.push("TITLE: "+one(c.title));
             L.push("PROBLEM_TYPE: "+c.ptype);
             pushBlock(L,"QUESTION",c.question);
-            if(["multiple_choice","checkboxes","dropdown"].includes(c.ptype)){
+            if(c.ptype==="inline_dropdown"){
+              (c.dropdowns||[]).forEach((dd,di)=>{
+                L.push("DROPDOWN "+(di+1)+":");
+                dd.options.forEach(o=>L.push("- "+(o.correct?"(x)":"( )")+" "+one(o.t)));
+              });
+            } else if(["multiple_choice","checkboxes","dropdown"].includes(c.ptype)){
               L.push("OPTIONS:");
               c.options.forEach(o=>{
                 const m = c.ptype==="checkboxes" ? (o.correct?"[x]":"[ ]") : (o.correct?"(x)":"( )");
@@ -917,7 +982,19 @@ function validate(){
     if(c.kind==="TEXT" && !(c.body||"").trim() && !(c.title||"").trim()) add("Empty text component");
     if(c.kind==="PROBLEM"){
       if(!(c.question||"").trim()) add("Problem has no question");
-      if(["multiple_choice","checkboxes","dropdown"].includes(c.ptype)){
+      if(c.ptype==="inline_dropdown"){
+        const dds=c.dropdowns||[];
+        const tokens=new Set(((c.question||"").match(/\[\[(\d+)\]\]/g)||[]).map(m=>+m.replace(/\D/g,"")));
+        if(!dds.length) add("Inline dropdowns: no dropdowns defined");
+        dds.forEach((dd,i)=>{
+          if(!tokens.has(i+1)) add("Dropdown "+(i+1)+" has no [["+(i+1)+"]] token in the body");
+          const correct=(dd.options||[]).filter(o=>o.correct).length;
+          if((dd.options||[]).length<2) add("Dropdown "+(i+1)+" needs at least two options");
+          if(correct!==1) add("Dropdown "+(i+1)+" needs exactly one correct option");
+          if((dd.options||[]).some(o=>!o.t.trim())) add("Dropdown "+(i+1)+" has a blank option");
+        });
+        tokens.forEach(n=>{ if(n>dds.length||n<1) add("Token [["+n+"]] has no matching dropdown"); });
+      } else if(["multiple_choice","checkboxes","dropdown"].includes(c.ptype)){
         const correct=c.options.filter(o=>o.correct).length;
         const blank=c.options.some(o=>!o.t.trim());
         if(c.ptype==="checkboxes" && correct===0) add("Checkboxes: no answer marked correct");
@@ -995,7 +1072,7 @@ function parseTemplate(text){
 
   const meta = {DISPLAY_NAME:"",COURSE_ID:"",ORG:"",RUN:"",SHORT_DESCRIPTION:""};
   const chapters = []; // {name, seqs:[{title, units:[{title, comps:[...]}]}]}
-  let curChapter=null, curSeq=null, curUnit=null, curComp=null;
+  let curChapter=null, curSeq=null, curUnit=null, curComp=null, curDropdown=null;
   let mode=null; // 'module' while reading meta
   let bodyBuffer=null; // collecting multi-line BODY
 
@@ -1042,7 +1119,7 @@ function parseTemplate(text){
     if(/^>>>\s*COMPONENT:/.test(line)){
       flushBody();
       const kind=line.replace(/^>>>\s*COMPONENT:\s*/,"").trim().toUpperCase();
-      curComp={kind};
+      curComp={kind}; curDropdown=null;
       if(kind==="PROBLEM"){curComp.options=[];curComp.ptype="";}  // set only from PROBLEM_TYPE; lets [x] markers infer checkboxes
       if(curUnit) curUnit.comps.push(curComp);
       continue;
@@ -1088,12 +1165,17 @@ function parseTemplate(text){
         else curComp.explanation=val;
         continue;
       }
+      // inline-dropdown group header: "DROPDOWN n:" — subsequent option lines feed it
+      if(/^DROPDOWN\s+\d+:\s*$/.test(line) && curComp.kind==="PROBLEM"){
+        curComp.dropdowns=curComp.dropdowns||[]; curDropdown={options:[]}; curComp.dropdowns.push(curDropdown);
+        continue;
+      }
       // option lines
       const opt=line.match(/^-\s*([\(\[])([ xX])([\)\]])\s?(.*)$/);
       if(opt && curComp.kind==="PROBLEM"){
-        const bracket=opt[1];
-        curComp.options.push({t:opt[4]||"",correct:opt[2].toLowerCase()==="x"});
-        if(bracket==="[") curComp._checkbox=true;
+        const o={t:opt[4]||"",correct:opt[2].toLowerCase()==="x"};
+        if(curDropdown){ curDropdown.options.push(o); }
+        else { curComp.options.push(o); if(opt[1]==="[") curComp._checkbox=true; }
         continue;
       }
       const f=line.match(/^([A-Z_]+):\s?(.*)$/);
@@ -1161,7 +1243,11 @@ function compFromParsed(c){
     out.ptype = PROBLEM_TYPES.includes(c.ptype) ? c.ptype : (c._checkbox?"checkboxes":"multiple_choice");
     out.question=c.question||"";
     out.explanation=c.explanation||""; out.hint=c.hint||"";
-    if(["multiple_choice","checkboxes","dropdown"].includes(out.ptype)){
+    if(out.ptype==="inline_dropdown"){
+      out.dropdowns = (c.dropdowns&&c.dropdowns.length)
+        ? c.dropdowns.map(dd=>({options:(dd.options||[]).map(o=>({t:o.t||"",correct:!!o.correct}))}))
+        : [newDropdown()];
+    } else if(["multiple_choice","checkboxes","dropdown"].includes(out.ptype)){
       out.options = (c.options&&c.options.length)?c.options.map(o=>({t:o.t||"",correct:!!o.correct}))
                                                  :[{t:"",correct:false},{t:"",correct:true},{t:"",correct:false}];
       // checkboxes may have 0 correct; choice types need exactly one — don't force, author can fix
@@ -1300,9 +1386,21 @@ function mdToHtml(body){
   const lines=(body||"").split("\n"); const out=[]; let list=null,para=[];
   const closeList=()=>{ if(list){out.push('</'+list+'>');list=null;} };
   const flushPara=()=>{ if(para.length){out.push('<p>'+para.map(mdInline).join('<br/>')+'</p>');para=[];} };
-  for(const ln of lines){
-    const t=ln.trim();
+  const cells=row=>row.trim().replace(/^\|/,'').replace(/\|$/,'').split('|').map(x=>x.trim());
+  const isSep=l=>/^\s*\|?(\s*:?-{2,}:?\s*\|)+\s*:?-{2,}:?\s*\|?\s*$/.test(l) || /^\s*\|(\s*:?-{2,}:?\s*\|)+\s*$/.test(l);
+  for(let i=0;i<lines.length;i++){
+    const ln=lines[i], t=ln.trim();
     if(t===""){ flushPara(); closeList(); continue; }
+    // GFM pipe table: a "|...|" header row immediately followed by a "| --- |" separator
+    if(/^\|.*\|$/.test(t) && i+1<lines.length && isSep(lines[i+1])){
+      flushPara(); closeList();
+      out.push('<table><thead><tr>'+cells(t).map(h=>'<th>'+mdInline(h)+'</th>').join('')+'</tr></thead><tbody>');
+      i+=2;
+      while(i<lines.length && /^\|.*\|$/.test(lines[i].trim())){
+        out.push('<tr>'+cells(lines[i]).map(d=>'<td>'+mdInline(d)+'</td>').join('')+'</tr>'); i++;
+      }
+      i--; out.push('</tbody></table>'); continue;
+    }
     const ul=t.match(/^[-*]\s+(.*)$/), ol=t.match(/^\d+\.\s+(.*)$/);
     if(ul){ flushPara(); if(list!=='ul'){closeList();out.push('<ul>');list='ul';} out.push('<li>'+mdInline(ul[1])+'</li>'); continue; }
     if(ol){ flushPara(); if(list!=='ol'){closeList();out.push('<ol>');list='ol';} out.push('<li>'+mdInline(ol[1])+'</li>'); continue; }
@@ -1332,7 +1430,17 @@ function componentName(c,u,ch){
   return base+" — "+type+(qual?" ("+qual+")":"");
 }
 
+const optionInput=dd=>'<optionresponse><optioninput>'+(dd.options||[]).map(o=>'<option correct="'+(o.correct?'True':'False')+'">'+xmlText(o.t)+'</option>').join('')+'</optioninput></optionresponse>';
 function olxProblem(c,dn){
+  const sol=(c.explanation||"").trim()?'<solution><div class="detailed-solution"><p>Explanation</p>'+mdToHtml(c.explanation)+'</div></solution>':'';
+  const hint=(c.hint||"").trim()?'<demandhint><hint>'+mdToHtml(c.hint)+'</hint></demandhint>':'';
+  const wrap=inner=>'<problem display_name="'+xmlEsc(dn||c.title||"Problem")+'">\n'+inner+'\n'+sol+hint+'\n</problem>\n';
+  if(c.ptype==="inline_dropdown"){
+    const dds=c.dropdowns||[];
+    // each [[n]] token in the rendered body becomes an inline dropdown
+    const html=mdToHtml(c.question||"").replace(/\[\[(\d+)\]\]/g,(m,n)=>{const dd=dds[(+n)-1];return dd?optionInput(dd):m;});
+    return wrap(html);
+  }
   const opts=c.options||[];
   let resp="";
   if(c.ptype==="multiple_choice")
@@ -1340,16 +1448,13 @@ function olxProblem(c,dn){
   else if(c.ptype==="checkboxes")
     resp='<choiceresponse><checkboxgroup>'+opts.map(o=>'<choice correct="'+(o.correct?'true':'false')+'">'+xmlText(o.t)+'</choice>').join('')+'</checkboxgroup></choiceresponse>';
   else if(c.ptype==="dropdown")
-    resp='<optionresponse><optioninput>'+opts.map(o=>'<option correct="'+(o.correct?'True':'False')+'">'+xmlText(o.t)+'</option>').join('')+'</optioninput></optionresponse>';
+    resp=optionInput({options:opts});
   else if(c.ptype==="numerical"){
     const tol=(c.tolerance||"").replace(/^[±+]/,'').trim();
     resp='<numericalresponse answer="'+xmlEsc((c.answer||"0").trim())+'">'+(tol?'<responseparam type="tolerance" default="'+xmlEsc(tol)+'"/>':'')+'<formulaequationinput/></numericalresponse>';
   } else
     resp='<stringresponse answer="'+xmlEsc((c.answer||"").trim())+'" type="ci"><textline size="40"/></stringresponse>';
-  const q=mdToHtml(c.question||"");
-  const sol=(c.explanation||"").trim()?'<solution><div class="detailed-solution"><p>Explanation</p>'+mdToHtml(c.explanation)+'</div></solution>':'';
-  const hint=(c.hint||"").trim()?'<demandhint><hint>'+mdToHtml(c.hint)+'</hint></demandhint>':'';
-  return '<problem display_name="'+xmlEsc(dn||c.title||"Problem")+'">\n'+q+'\n'+resp+'\n'+sol+hint+'\n</problem>\n';
+  return wrap(mdToHtml(c.question||"")+'\n'+resp);
 }
 function olxVideo(c,dn){
   const url=(c.url||"").trim();

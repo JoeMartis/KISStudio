@@ -187,6 +187,37 @@ Return = (112-100)/100 = 12%.
 <<<
 HINT: 
 
+>>> UNIT: L2.2 Reading a forecast
+>>> COMPONENT: PROBLEM
+CONCEPT: Reading a forecast
+QUALIFIER: 
+LIB_TYPE: 
+TITLE: 
+PROBLEM_TYPE: inline_dropdown
+QUESTION:
+A forecast that always predicts last year's value is a [[1]] baseline.
+
+Classify each model by how it compares to that baseline:
+
+| Model | Verdict |
+| --- | --- |
+| Coin-flip predictor | [[2]] |
+| Tuned gradient model | [[3]] |
+<<<
+DROPDOWN 1:
+- (x) naive
+- ( ) sophisticated
+DROPDOWN 2:
+- ( ) beats baseline
+- (x) no better than baseline
+DROPDOWN 3:
+- (x) beats baseline
+- ( ) no better than baseline
+EXPLANATION:
+The naive baseline is the bar to beat: a coin flip won't, a tuned model should.
+<<<
+HINT: Compare each to *predicting last year again*.
+
 >>> UNIT: Summary
 >>> COMPONENT: TEXT
 CONCEPT: 
