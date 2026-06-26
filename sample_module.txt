@@ -128,6 +128,35 @@ Learning rate is a training hyperparameter, not an evaluation metric.
 <<<
 HINT: 
 
+>>> UNIT: L1.3 Over- and underfitting
+>>> COMPONENT: TEXT
+CONCEPT: Over- and underfitting
+QUALIFIER: 
+LIB_TYPE: 
+TITLE: Reading
+BODY:
+A model can fail in two opposite ways: *underfitting* (too simple to capture the pattern) or *overfitting* (memorizing the training data and missing the general rule).
+<<<
+
+>>> COMPONENT: PROBLEM
+CONCEPT: Overfitting
+QUALIFIER: 
+LIB_TYPE: 
+TITLE: 
+PROBLEM_TYPE: dropdown
+QUESTION:
+Which term describes a model that fits the training data too closely and generalizes poorly to new data?
+<<<
+OPTIONS:
+- ( ) Underfitting
+- (x) Overfitting
+- ( ) Regularization
+- ( ) Normalization
+EXPLANATION:
+*Overfitting*: low error on training data, high error on unseen data.
+<<<
+HINT: 
+
 >>> UNIT: Summary
 >>> COMPONENT: TEXT
 CONCEPT: 
@@ -215,6 +244,59 @@ EXPLANATION:
 The naive baseline is the bar to beat: a coin flip won't, a tuned model should.
 <<<
 HINT: Compare each to *predicting last year again*.
+
+>>> UNIT: L2.3 Bias, variance, and task types
+>>> COMPONENT: PROBLEM
+CONCEPT: Bias-variance tradeoff
+QUALIFIER: 
+LIB_TYPE: 
+TITLE: 
+PROBLEM_TYPE: inline_dropdown
+QUESTION:
+A model that is too simple tends to have high [[1]], while a model that is too complex tends to have high [[2]].
+<<<
+DROPDOWN 1:
+- (x) bias
+- ( ) variance
+DROPDOWN 2:
+- (x) variance
+- ( ) bias
+EXPLANATION:
+Too simple → underfit (high *bias*); too complex → overfit (high *variance*).
+<<<
+HINT: Think underfit vs. overfit.
+
+>>> COMPONENT: PROBLEM
+CONCEPT: Types of ML tasks
+QUALIFIER: 
+LIB_TYPE: 
+TITLE: 
+PROBLEM_TYPE: inline_dropdown
+QUESTION:
+Classify each task by the kind of ML problem it is:
+
+| Task | Type |
+| --- | --- |
+| Predict a house's sale price | [[1]] |
+| Flag an email as spam or not | [[2]] |
+| Group customers into segments | [[3]] |
+<<<
+DROPDOWN 1:
+- (x) Regression
+- ( ) Classification
+- ( ) Clustering
+DROPDOWN 2:
+- ( ) Regression
+- (x) Classification
+- ( ) Clustering
+DROPDOWN 3:
+- ( ) Regression
+- ( ) Classification
+- (x) Clustering
+EXPLANATION:
+Continuous number → *regression*; discrete label → *classification*; no labels, find groups → *clustering*.
+<<<
+HINT: What's the output — a number, a label, or a grouping?
 
 >>> UNIT: Summary
 >>> COMPONENT: TEXT
