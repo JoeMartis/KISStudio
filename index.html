@@ -1439,7 +1439,8 @@ const DD_STYLE='<style>'
  +'.kis-dd table{border-collapse:collapse;margin:.6em 0}'
  +'.kis-dd th,.kis-dd td{border:1px solid #ccc;padding:6px 12px;text-align:left;vertical-align:middle}'
  +'.kis-dd th{background:#f5f5f5;font-weight:600}'
- +'.kis-dd .inputtype,.kis-dd .option-input,.kis-dd select{display:inline-block;vertical-align:middle;margin:0 .15em}'
+ +'.kis-dd .kis-line{margin:.35em 0}'
+ +'.kis-dd .capa_inputtype,.kis-dd .inputtype,.kis-dd .option-input,.kis-dd [class*=inputtype],.kis-dd select{display:inline-block;vertical-align:middle;margin:0 .2em}'
  +'</style>';
 function olxProblem(c,dn){
   const sol=(c.explanation||"").trim()?'<solution><div class="detailed-solution"><p>Explanation</p>'+mdToHtml(c.explanation)+'</div></solution>':'';
@@ -1448,7 +1449,13 @@ function olxProblem(c,dn){
   if(c.ptype==="inline_dropdown"){
     const dds=c.dropdowns||[];
     // each [[n]] token in the rendered body becomes an inline dropdown
-    const html=mdToHtml(c.question||"").replace(/\[\[(\d+)\]\]/g,(m,n)=>{const dd=dds[(+n)-1];return dd?optionInput(dd):m;});
+    let html=mdToHtml(c.question||"").replace(/\[\[(\d+)\]\]/g,(m,n)=>{const dd=dds[(+n)-1];return dd?optionInput(dd):m;});
+    // A sentence-level dropdown lands inside a <p>; edX injects block-level
+    // input markup, and a block element inside <p> gets hoisted by the browser,
+    // breaking the sentence. Promote any token-bearing paragraph to a
+    // block-tolerant <div> so the select can be re-inlined via CSS. Table cells
+    // (<td>) already tolerate block children, so they're left untouched.
+    html=html.replace(/<p>((?:(?!<\/p>)[\s\S])*?<optionresponse>[\s\S]*?)<\/p>/g,'<div class="kis-line">$1</div>');
     return wrap(DD_STYLE+'\n<div class="kis-dd">\n'+html+'\n</div>');
   }
   const opts=c.options||[];
