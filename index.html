@@ -1431,6 +1431,16 @@ function componentName(c,u,ch){
 }
 
 const optionInput=dd=>'<optionresponse><optioninput>'+(dd.options||[]).map(o=>'<option correct="'+(o.correct?'True':'False')+'">'+xmlText(o.t)+'</option>').join('')+'</optioninput></optionresponse>';
+// Scoped styling for inline-dropdown problems: tidy table grid + pull the
+// inline selects back onto the sentence line (edX renders optionresponse
+// block-level by default). All rules are namespaced under .kis-dd so they
+// can never leak into the rest of the page; no >/&/< so it stays XML-safe.
+const DD_STYLE='<style>'
+ +'.kis-dd table{border-collapse:collapse;margin:.6em 0}'
+ +'.kis-dd th,.kis-dd td{border:1px solid #ccc;padding:6px 12px;text-align:left;vertical-align:middle}'
+ +'.kis-dd th{background:#f5f5f5;font-weight:600}'
+ +'.kis-dd .inputtype,.kis-dd .option-input,.kis-dd select{display:inline-block;vertical-align:middle;margin:0 .15em}'
+ +'</style>';
 function olxProblem(c,dn){
   const sol=(c.explanation||"").trim()?'<solution><div class="detailed-solution"><p>Explanation</p>'+mdToHtml(c.explanation)+'</div></solution>':'';
   const hint=(c.hint||"").trim()?'<demandhint><hint>'+mdToHtml(c.hint)+'</hint></demandhint>':'';
@@ -1439,7 +1449,7 @@ function olxProblem(c,dn){
     const dds=c.dropdowns||[];
     // each [[n]] token in the rendered body becomes an inline dropdown
     const html=mdToHtml(c.question||"").replace(/\[\[(\d+)\]\]/g,(m,n)=>{const dd=dds[(+n)-1];return dd?optionInput(dd):m;});
-    return wrap(html);
+    return wrap(DD_STYLE+'\n<div class="kis-dd">\n'+html+'\n</div>');
   }
   const opts=c.options||[];
   let resp="";
