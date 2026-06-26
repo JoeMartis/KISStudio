@@ -77,6 +77,7 @@ full walkthrough, including how image assets are handled.
 | `index.html`        | The entire application (HTML + CSS + JS, single file) |
 | `sample_module.txt` | A complete example module — import it to explore      |
 | `AUTHOR_GUIDE.md`   | Full authoring documentation for the content team     |
+| `PRODUCTION_GUIDE.md` | How production turns the exports into libraries + a module |
 | `README.md`         | This file                                             |
 
 ---

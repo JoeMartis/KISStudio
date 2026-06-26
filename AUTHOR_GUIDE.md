@@ -423,6 +423,10 @@ your team processes each component.
 > The on-screen table flags any component that still **needs a Concept** so you can
 > spot gaps before tagging.
 
+For what production does with this worksheet (and the OLX export) — building the
+Content Library and assembling the module — see the
+**[Production Guide](PRODUCTION_GUIDE.md)**.
+
 ---
 
 ## 14. Tips, limits, and gotchas
