@@ -87,13 +87,13 @@ kinds:
 | Component   | Use it for                                              |
 |-------------|---------------------------------------------------------|
 | **TEXT**    | Readings, explanations, summaries, diagrams (with image) |
-| **VIDEO**   | A YouTube video (by link or ID)                          |
+| **VIDEO**   | A YouTube video (paste the link)                         |
 | **PROBLEM** | Any of the six interactive question types ([§6](#6-the-six-problem-types)) |
 
 Each component has a few fields. The most important content fields:
 
 - **TEXT** → a **Title** (optional) and a **Body** (your formatted text).
-- **VIDEO** → a **Title**, the **Video** field (YouTube link or ID), and an
+- **VIDEO** → a **Title**, the **Video** field (YouTube link), and an
   optional **Transcript file** name.
 - **PROBLEM** → a **Problem type**, a **Question**, type-specific answer fields,
   and optional **Explanation** and **Hint**.
@@ -285,11 +285,9 @@ problem with three independently-graded dropdowns: one inline, two in the table.
 
 ## 8. Videos
 
-In a **VIDEO** component, the **Video** field accepts either:
-
-- a full YouTube link — `https://www.youtube.com/watch?v=E-4aGqg69TI`, a
-  `youtu.be/…` short link, or an embed link; **or**
-- a bare 11-character **YouTube ID** — `E-4aGqg69TI`.
+In a **VIDEO** component, paste a **YouTube link** into the **Video** field — a
+standard `https://www.youtube.com/watch?v=…` link, a `youtu.be/…` short link, or an
+embed link all work.
 
 Optionally add a **Transcript file** name (e.g. `L1-1.srt`). As with images, the
 transcript file is referenced by name — upload it to Studio separately.
@@ -373,7 +371,7 @@ The export contains the full course structure (sections → subsections → unit
 components), with:
 
 - text components as HTML pages,
-- videos wired to their YouTube IDs (with transcripts referenced),
+- videos wired to YouTube (with transcripts referenced),
 - problems as edX CAPA problems (including the multi-dropdown ones),
 - a basic grading policy where **Assignments** count toward the grade.
 
@@ -422,7 +420,7 @@ your team processes each component.
   edX evaluates them.
 - **Graded vs. ungraded** is decided by section: problems in **Assignments** are
   graded; elsewhere they're knowledge checks.
-- **YouTube only**, by link or 11-character ID, for videos.
+- **YouTube only** for videos — paste the video link.
 - **Do a sandbox test import** the first time, to confirm the result in Studio.
 
 ---
