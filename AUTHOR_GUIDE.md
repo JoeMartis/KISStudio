@@ -115,16 +115,16 @@ the Library worksheet. The pattern is:
 <Concept> — <Type> [optional qualifier]
 ```
 
-For example, a knowledge-check problem about reading a forecast becomes:
+For example, a knowledge-check problem about reading a Punnett square becomes:
 
 ```
-Reading a forecast — KC
+Reading a Punnett square — KC
 ```
 
 ### Concept
 
 A short phrase naming **the idea this component teaches or tests** — e.g.
-*"Features and labels"*, *"Model evaluation metrics"*, *"Annual return"*. You type
+*"Genes and alleles"*, *"The central dogma"*, *"Monohybrid ratios"*. You type
 this in the **Concept** field. If you leave it blank, the tool falls back to the
 component's title or its unit's title (and the worksheet flags it as needing a
 concept).
@@ -175,10 +175,10 @@ can use a small set of formatting marks. The live preview shows how it will look
 Write a table using pipes `|`, with a separator row of dashes under the header:
 
 ```
-| Model               | Verdict   |
-| ---                 | ---       |
-| Coin-flip predictor | no better |
-| Tuned gradient model| beats it  |
+| Genotype | Zygosity     |
+| ---      | ---          |
+| AA       | homozygous   |
+| Aa       | heterozygous |
 ```
 
 The first row is the header; the `| --- | --- |` line marks the boundary; the rest
@@ -190,7 +190,7 @@ notation.) Escape it with a backslash: write `P(A\|B)` to get a single cell read
 
 ### Images are *referenced*, not uploaded
 
-When you use `[[image: confusion_matrix.png | …]]`, the tool writes a **reference**
+When you use `[[image: central_dogma.png | …]]`, the tool writes a **reference**
 to that filename. The image itself is **not** bundled into the export. After
 importing into edX, upload the image separately (**Files & Uploads** in Studio)
 using the **same filename**.
@@ -258,14 +258,14 @@ token at your cursor — the easiest way to add one.
 Body:
 
 ```
-A forecast that always predicts last year's value is a [[1]] baseline.
+In a monohybrid cross written Aa × Aa, the uppercase allele A is [[1]].
 
-Classify each model by how it compares to that baseline:
+Classify each genotype by its zygosity:
 
-| Model                | Verdict |
-| ---                  | ---     |
-| Coin-flip predictor  | [[2]]   |
-| Tuned gradient model | [[3]]   |
+| Genotype | Classification |
+| ---      | ---            |
+| AA       | [[2]]          |
+| Aa       | [[3]]          |
 ```
 
 Then three dropdown editors appear — one each for `[[1]]`, `[[2]]`, `[[3]]` — where
@@ -461,9 +461,9 @@ carefully** and keep the structure intact.
 ================================================================================
 MODULE
 ================================================================================
-DISPLAY_NAME: AI and Finance
-COURSE_ID: UAI.FIN.1
-ORG: UAI_SOURCE
+DISPLAY_NAME: Foundations of Genetics
+COURSE_ID: BIO.GEN.1
+ORG: BIO_SOURCE
 RUN: 1T2026
 SHORT_DESCRIPTION: A hands-on introduction to …
 
@@ -480,9 +480,9 @@ SEQUENTIAL: Module Overview and Learning Goals
 CONCEPT: Module overview
 QUALIFIER:
 LIB_TYPE:
-TITLE: Welcome to AI and Finance
+TITLE: Welcome to Foundations of Genetics
 BODY:
-Welcome to *AI and Finance*. …
+Welcome to *Foundations of Genetics*. …
 <<<
 ```
 
@@ -509,19 +509,19 @@ correct one:
 
 ```
 OPTIONS:
-- ( ) The value the model predicts
-- (x) An input variable the model uses
-- ( ) The model's accuracy
+- ( ) A gene's position on a chromosome
+- (x) A different version of a gene
+- ( ) A type of protein
 ```
 
 For checkboxes (select all), use square markers; `[x]` marks each correct one:
 
 ```
 OPTIONS:
-- [x] Precision
-- [x] Recall
-- [ ] Learning rate
-- [x] F1 score
+- [x] Adenine
+- [x] Guanine
+- [ ] Uracil
+- [x] Thymine
 ```
 
 ### Inline-dropdown blocks
@@ -532,26 +532,26 @@ with option lines (round markers, `(x)` = correct):
 ```
 PROBLEM_TYPE: inline_dropdown
 QUESTION:
-A forecast that always predicts last year's value is a [[1]] baseline.
+In a monohybrid cross written Aa × Aa, the uppercase allele A is [[1]].
 
-| Model                | Verdict |
-| ---                  | ---     |
-| Coin-flip predictor  | [[2]]   |
-| Tuned gradient model | [[3]]   |
+| Genotype | Classification |
+| ---      | ---            |
+| AA       | [[2]]          |
+| Aa       | [[3]]          |
 <<<
 DROPDOWN 1:
-- (x) naive
-- ( ) sophisticated
+- (x) dominant
+- ( ) recessive
 DROPDOWN 2:
-- ( ) beats baseline
-- (x) no better than baseline
+- (x) homozygous
+- ( ) heterozygous
 DROPDOWN 3:
-- (x) beats baseline
-- ( ) no better than baseline
+- (x) heterozygous
+- ( ) homozygous
 EXPLANATION:
-The naive baseline is the bar to beat …
+Two of the same allele = homozygous; two different = heterozygous …
 <<<
-HINT: Compare each to *predicting last year again*.
+HINT: Same letters, or different?
 ```
 
 ### Escaping inside multi-line blocks

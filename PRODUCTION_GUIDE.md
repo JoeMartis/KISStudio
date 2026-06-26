@@ -234,7 +234,7 @@ Recitation · Discussion
 **Modality:** Text / HTML · Video · Problem (CAPA)
 
 **Naming convention:** `Concept — Type [optional qualifier]` (e.g.
-*"Reading a forecast — KC"*). The **Concept** is the searchable idea and becomes the
+*"Reading a Punnett square — KC"*). The **Concept** is the searchable idea and becomes the
 block's library name.
 
 **Attached in production (not in the export):** video sources (OVS), transcripts.
