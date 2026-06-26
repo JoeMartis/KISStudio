@@ -87,14 +87,14 @@ kinds:
 | Component   | Use it for                                              |
 |-------------|---------------------------------------------------------|
 | **TEXT**    | Readings, explanations, summaries, diagrams (with image) |
-| **VIDEO**   | A video (enter its OVS ID)                                |
+| **VIDEO**   | A video placeholder (with an optional filename note)     |
 | **PROBLEM** | Any of the six interactive question types ([§6](#6-the-six-problem-types)) |
 
 Each component has a few fields. The most important content fields:
 
 - **TEXT** → a **Title** (optional) and a **Body** (your formatted text).
-- **VIDEO** → a **Title**, the **Video** field (the OVS ID), and an
-  optional **Transcript file** name.
+- **VIDEO** → a **Title** and an optional **Video filename** (a note for the
+  production team; see [§8](#8-videos)).
 - **PROBLEM** → a **Problem type**, a **Question**, type-specific answer fields,
   and optional **Explanation** and **Hint**.
 
@@ -185,12 +185,12 @@ are data rows.
 notation.) Escape it with a backslash: write `P(A\|B)` to get a single cell reading
 `P(A|B)`.
 
-### Images and transcripts are *referenced*, not uploaded
+### Images are *referenced*, not uploaded
 
-When you use `[[image: confusion_matrix.png | …]]` or set a video transcript file,
-the tool writes a **reference** to that filename. The image/transcript itself is
-**not** bundled into the export. After importing into edX, upload those assets
-separately (**Files & Uploads** in Studio) using the **same filenames**.
+When you use `[[image: confusion_matrix.png | …]]`, the tool writes a **reference**
+to that filename. The image itself is **not** bundled into the export. After
+importing into edX, upload the image separately (**Files & Uploads** in Studio)
+using the **same filename**.
 
 ---
 
@@ -285,11 +285,21 @@ problem with three independently-graded dropdowns: one inline, two in the table.
 
 ## 8. Videos
 
-In a **VIDEO** component, enter the video's **OVS ID** in the **Video** field (OVS
-is our video hosting service).
+A **VIDEO** component is a **placeholder**. The actual video source and its
+transcript are attached **in the platform later**, during production — so you
+don't enter a video ID, URL, or transcript here.
 
-Optionally add a **Transcript file** name (e.g. `L1-1.srt`). As with images, the
-transcript file is referenced by name — upload it to Studio separately.
+What you can set:
+
+- a **Title**, and
+- an optional **Video filename** — a note for the production team identifying which
+  file to attach later (e.g. `lecture-01.mp4`).
+
+The **Video filename** is purely a reference: it appears in the
+[Library worksheet](#13-the-library-worksheet-naming--tagging) (so production knows
+which file goes where) but is **deliberately left out of the Studio/OLX export**.
+On export, the video becomes a named, empty video block — the slot is there in
+Studio, ready for the real video to be dropped in.
 
 ---
 
@@ -320,7 +330,6 @@ Common messages and what they mean:
 - **Missing display name / course ID** — fill in the module details.
 - **Unit has no components** — add at least one component, or remove the unit.
 - **Empty text component** — the text block has no title and no body.
-- **Video has no ID or URL** — the Video field is empty.
 - **Problem has no question / no answer** — fill the missing field.
 - **Choice problem needs exactly one correct answer** — mark exactly one (for
   multiple choice / dropdown).
@@ -360,9 +369,9 @@ it.
    it as **`<course-id>_<run>.tar.gz`**.
 3. In **edX Studio**, go to **Tools → Import** (or **Settings → Import**) and
    upload that `.tar.gz`.
-4. After import, **upload your assets** — every image referenced with
-   `[[image: …]]` and every transcript file — under **Files & Uploads**, using the
-   exact filenames.
+4. After import, **upload your images** — every image referenced with
+   `[[image: …]]` — under **Files & Uploads**, using the exact filenames. (Video
+   sources and transcripts are added later in the platform, not here.)
 
 ### What's in the package
 
@@ -370,7 +379,8 @@ The export contains the full course structure (sections → subsections → unit
 components), with:
 
 - text components as HTML pages,
-- videos as edX video components (with transcripts referenced),
+- videos as **named placeholder** components (the source is attached later in the
+  platform),
 - problems as edX CAPA problems (including the multi-dropdown ones),
 - a basic grading policy where **Assignments** count toward the grade.
 
@@ -395,6 +405,8 @@ It follows a simple model:
 - **Modality** = Text / HTML, Video, or Problem (CAPA).
 - **Type** = the convention Type from [§4](#4-naming-concept-type-and-qualifier).
 - **Suggested name** = the `Concept — Type [qualifier]` name.
+- **Video file** = the optional filename you noted on a VIDEO component, so
+  production knows which source to attach later.
 
 The CSV opens cleanly in Excel/Google Sheets (it includes a UTF-8 marker so accents
 and the em-dash render correctly, and is safe against spreadsheet formula quirks).
@@ -411,15 +423,17 @@ your team processes each component.
 - **Export before you leave.** (Said three times for a reason.) No auto-save.
 - **Keep the five section headings intact** in any hand-edited `.txt`. Renamed or
   duplicated headings get skipped on import (you'll be told which).
-- **Assets aren't bundled.** Images and transcripts are referenced by filename;
-  upload them to Studio separately with matching names.
+- **Images aren't bundled.** They're referenced by filename; upload them to Studio
+  separately with matching names.
+- **Videos are placeholders.** The source and transcript are attached later in the
+  platform; the optional **Video filename** is just a production note that rides
+  along in the worksheet.
 - **Math in dropdown choices is text-only.** Use unicode/text for fractions and
   symbols in dropdown options. Prose math (in the question) renders fine.
 - **Numerical answers can be expressions.** `1/2`, `pi`, `sqrt(2)` are all valid —
   edX evaluates them.
 - **Graded vs. ungraded** is decided by section: problems in **Assignments** are
   graded; elsewhere they're knowledge checks.
-- **Videos use your OVS ID** — enter it in the Video field.
 - **Do a sandbox test import** the first time, to confirm the result in Studio.
 
 ---
@@ -470,8 +484,8 @@ Welcome to *AI and Finance*. …
 - **Units** start with `>>> UNIT: <title>`.
 - **Components** start with `>>> COMPONENT: TEXT` / `VIDEO` / `PROBLEM`.
 - **Single-line fields** are `KEY: value` — e.g. `TITLE:`, `CONCEPT:`,
-  `QUALIFIER:`, `LIB_TYPE:`, `VIDEO_URL:`, `TRANSCRIPT_FILE:`, `PROBLEM_TYPE:`,
-  `ANSWER:`, `TOLERANCE:`, `HINT:`.
+  `QUALIFIER:`, `LIB_TYPE:`, `VIDEO_FILE:` (the optional production filename),
+  `PROBLEM_TYPE:`, `ANSWER:`, `TOLERANCE:`, `HINT:`.
 - **Multi-line fields** (`BODY:`, `QUESTION:`, `EXPLANATION:`) start with the key
   on its own line, then your content, then a closing `<<<` fence. Everything
   between the key line and the `<<<` is kept exactly as written.

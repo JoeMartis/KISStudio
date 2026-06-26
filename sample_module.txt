@@ -74,8 +74,7 @@ CONCEPT: What is a model
 QUALIFIER: 
 LIB_TYPE: 
 TITLE: Models in 4 minutes
-VIDEO_URL: E-4aGqg69TI
-TRANSCRIPT_FILE: L1-1.srt
+VIDEO_FILE: models-in-4-minutes.mp4
 
 >>> COMPONENT: PROBLEM
 CONCEPT: Feature vs label
@@ -168,8 +167,7 @@ CONCEPT: Why baselines matter
 QUALIFIER: 
 LIB_TYPE: 
 TITLE: Baselines matter
-VIDEO_URL: E-4aGqg69TI
-TRANSCRIPT_FILE: L2-1.srt
+VIDEO_FILE: baselines-matter.mp4
 
 >>> COMPONENT: PROBLEM
 CONCEPT: Annual return
@@ -252,8 +250,7 @@ CONCEPT: Notebook setup
 QUALIFIER: 
 LIB_TYPE: 
 TITLE: Notebook setup
-VIDEO_URL: E-4aGqg69TI
-TRANSCRIPT_FILE: R1-1.srt
+VIDEO_FILE: notebook-setup.mp4
 
 >>> UNIT: R1.2 Loading market data
 >>> COMPONENT: VIDEO
@@ -261,8 +258,7 @@ CONCEPT: Loading market data
 QUALIFIER: 
 LIB_TYPE: 
 TITLE: Loading data
-VIDEO_URL: E-4aGqg69TI
-TRANSCRIPT_FILE: R1-2.srt
+VIDEO_FILE: 
 
 >>> UNIT: Recitation Summary
 >>> COMPONENT: TEXT
@@ -361,8 +357,7 @@ CONCEPT: Course wrap-up
 QUALIFIER: 
 LIB_TYPE: 
 TITLE: Thank you and next steps
-VIDEO_URL: E-4aGqg69TI
-TRANSCRIPT_FILE: outro.srt
+VIDEO_FILE: course-wrap-up.mp4
 
 ================================================================================
 END OF MODULE

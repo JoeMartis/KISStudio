@@ -713,8 +713,10 @@ function renderComp(c,u,ch){
   }
   if(c.kind==="VIDEO"){
     body.appendChild(fieldText("Title",c.title||"",v=>c.title=v));
-    body.appendChild(fieldText("Video — YouTube ID or URL",c.url||"",v=>c.url=v,false,"E-4aGqg69TI  or  https://youtu.be/E-4aGqg69TI",true));
-    body.appendChild(fieldText("Transcript file",c.transcript||"",v=>c.transcript=v,false,"name.srt",true));
+    // The actual video source + transcript are attached in the platform later in
+    // production. This optional filename is a note for that team; it appears in the
+    // library worksheet but is NOT included in the Studio (OLX) export.
+    body.appendChild(fieldText("Video filename (optional)",c.videoFile||"",v=>c.videoFile=v,false,"e.g. lecture-01.mp4 — for production; not exported to Studio",true));
   }
   if(c.kind==="PROBLEM"){
     body.appendChild(fieldText("Title",c.title||"",v=>c.title=v));
@@ -915,8 +917,7 @@ function serialize(){
           }
           if(c.kind==="VIDEO"){
             L.push("TITLE: "+one(c.title));
-            L.push("VIDEO_URL: "+one(c.url));
-            L.push("TRANSCRIPT_FILE: "+one(c.transcript));
+            L.push("VIDEO_FILE: "+one(c.videoFile));
           }
           if(c.kind==="PROBLEM"){
             L.push("TITLE: "+one(c.title));
@@ -988,7 +989,6 @@ function validate(){
     const at=ch.name+" › "+(u.title||"untitled unit");
     const sel='[data-comp="'+c.id+'"]';
     const add=msg=>issues.push({where:at,msg,sel});
-    if(c.kind==="VIDEO" && !(c.url||"").trim()) add("Video has no ID or URL");
     if(c.kind==="TEXT" && !(c.body||"").trim() && !(c.title||"").trim()) add("Empty text component");
     if(c.kind==="PROBLEM"){
       if(!(c.question||"").trim()) add("Problem has no question");
@@ -1199,9 +1199,7 @@ function parseTemplate(text){
         else if(key==="QUALIFIER")curComp.qualifier=val;
         else if(key==="LIB_TYPE")curComp.libType=val;
         else if(key==="BODY")curComp.body=val;
-        else if(key==="VIDEO_URL")curComp.url=val;
-        else if(key==="TRANSCRIPT_FILE")curComp.transcript=val;
-        else if(key==="DURATION")curComp.duration=val;
+        else if(key==="VIDEO_FILE")curComp.videoFile=val;
         else if(key==="PROBLEM_TYPE")curComp.ptype=(val||"multiple_choice").trim();
         else if(key==="QUESTION")curComp.question=val;
         else if(key==="ANSWER")curComp.answer=val;
@@ -1260,7 +1258,7 @@ function compFromParsed(c){
   const kind=["TEXT","VIDEO","PROBLEM"].includes((c.kind||"").toUpperCase())?(c.kind||"").toUpperCase():"TEXT";
   const out=comp(kind);
   if(kind==="TEXT"){ out.title=c.title||""; out.body=c.body||""; }
-  if(kind==="VIDEO"){ out.title=c.title||""; out.url=c.url||""; out.transcript=c.transcript||""; out.duration=c.duration||""; }
+  if(kind==="VIDEO"){ out.title=c.title||""; out.videoFile=c.videoFile||""; }
   if(kind==="PROBLEM"){
     out.title=c.title||"";
     out.ptype = PROBLEM_TYPES.includes(c.ptype) ? c.ptype : (c._checkbox?"checkboxes":"multiple_choice");
@@ -1505,15 +1503,10 @@ function olxProblem(c,dn){
   return wrap(mdToHtml(c.question||"")+'\n'+resp);
 }
 function olxVideo(c,dn){
-  const url=(c.url||"").trim();
-  // Accept a full URL or a bare 11-char YouTube ID.
-  const m=url.match(/(?:youtu\.be\/|[?&]v=|embed\/)([\w-]{11})/);
-  const id = m ? m[1] : (/^[\w-]{11}$/.test(url) ? url : null);
-  let a='display_name="'+xmlEsc(dn||c.title||"Video")+'" download_video="true"';
-  if(id) a+=' youtube_id_1_0="'+xmlEsc(id)+'"';
-  else if(url) a+=' html5_sources="'+xmlEsc(JSON.stringify([url]))+'"';
-  if((c.transcript||"").trim()) a+=' transcripts="'+xmlEsc(JSON.stringify({en:c.transcript.trim()}))+'"';
-  return '<video '+a+'/>\n';
+  // A named placeholder. The video source and transcript are attached in the
+  // platform later in production, so nothing else is emitted here. The author's
+  // reference filename (c.videoFile) stays in the library worksheet only.
+  return '<video display_name="'+xmlEsc(dn||c.title||"Video")+'"/>\n';
 }
 function buildOlx(st){
   const meta=st.meta;
@@ -1597,7 +1590,7 @@ async function exportOlx(){
   }catch(e){ toast("Couldn't build the edX archive: "+e.message); return; }
   const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=fname; a.click();
   const warn=issues.length?(" · "+issues.length+" validation issue"+(issues.length>1?"s":"")+" — open preview"):"";
-  toast("Exported "+fname+" · remember to upload images/transcripts in Studio"+warn);
+  toast("Exported "+fname+" · remember to upload images in Studio"+warn);
 }
 window.__olx=exportOlx;
 
@@ -1619,7 +1612,7 @@ function buildChecklist(st){
       rows.push({
         library, collection, segment:ch.name,
         type:componentType(c,ch), modality:MODALITY[c.kind]||c.kind,
-        name:componentName(c,u,ch), concept, status:"Not started",
+        name:componentName(c,u,ch), concept, videoFile:(c.videoFile||"").trim(), status:"Not started",
         location:ch.name+" > "+(s.title||"")+" > "+(u.title||"")
       });
     })));
@@ -1631,9 +1624,9 @@ function checklistCsv(st){
   const cell=v=>{v=v==null?"":(""+v);
     if(/^[=+\-@\t\r]/.test(v)) v="'"+v;          // neutralize spreadsheet formula injection (Excel/Sheets hide the leading ')
     return /[",\n\r]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;};
-  const head=["Library (program/org)","Collection (module)","Work segment","Type","Modality","Suggested name","Concept","Status","Owning team","Clearance","LD tags","Location","In library?","Notes"];
+  const head=["Library (program/org)","Collection (module)","Work segment","Type","Modality","Suggested name","Concept","Video file","Status","Owning team","Clearance","LD tags","Location","In library?","Notes"];
   const lines=[head.join(",")];
-  rows.forEach(r=>lines.push([r.library,r.collection,r.segment,r.type,r.modality,r.name,r.concept,r.status,"","","",r.location,"",""].map(cell).join(",")));
+  rows.forEach(r=>lines.push([r.library,r.collection,r.segment,r.type,r.modality,r.name,r.concept,r.videoFile,r.status,"","","",r.location,"",""].map(cell).join(",")));
   return lines.join("\r\n");
 }
 function showChecklist(){
@@ -1654,19 +1647,19 @@ function showChecklist(){
   card.appendChild(sum);
   // table — grouped by Work segment (chapter); names flagged when concept is missing
   const wrap=el('div','cl-tablewrap'); const tbl=document.createElement('table'); tbl.className='cl-table';
-  const thead=document.createElement('thead'); thead.innerHTML='<tr><th>#</th><th>Type</th><th>Modality</th><th>Suggested name</th><th>Status</th><th>Location</th></tr>'; tbl.appendChild(thead);
+  const thead=document.createElement('thead'); thead.innerHTML='<tr><th>#</th><th>Type</th><th>Modality</th><th>Suggested name</th><th>Video file</th><th>Status</th><th>Location</th></tr>'; tbl.appendChild(thead);
   const tb=document.createElement('tbody'); let lastSeg=null;
   rows.forEach((r,i)=>{
     if(r.segment!==lastSeg){
       lastSeg=r.segment;
       const cnt=rows.filter(x=>x.segment===r.segment).length;
       const gtr=document.createElement('tr'); gtr.className='cl-group';
-      const gtd=document.createElement('td'); gtd.colSpan=6;
+      const gtd=document.createElement('td'); gtd.colSpan=7;
       gtd.textContent="Work segment: "+r.segment+"   ("+cnt+" component"+(cnt>1?"s":"")+")";
       gtr.appendChild(gtd); tb.appendChild(gtr);
     }
     const tr=document.createElement('tr');
-    [String(i+1),r.type,r.modality,r.name,r.status,r.location].forEach((v,ci)=>{
+    [String(i+1),r.type,r.modality,r.name,r.videoFile,r.status,r.location].forEach((v,ci)=>{
       const td=document.createElement('td'); td.textContent=v;
       if(ci===0)td.className='cl-n';
       if(ci===3 && !r.concept){ td.title="No Concept set — name is a fallback"; td.style.color="var(--warn)"; td.textContent=v+"  ⚠ needs concept"; }
@@ -1680,7 +1673,7 @@ function showChecklist(){
   const dl=el('button','btn-primary','Download CSV');
   dl.onclick=()=>{ const blob=new Blob([String.fromCharCode(0xFEFF)+checklistCsv(st0())],{type:"text/csv;charset=utf-8"}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=slug+"_library_worksheet.csv"; a.click(); toast("Downloaded "+a.download); };
   const cp=el('button','btn','Copy table');
-  cp.onclick=()=>{ const tsv=["#\tWork segment\tType\tModality\tSuggested name\tConcept\tStatus\tLocation",...rows.map((r,i)=>(i+1)+"\t"+r.segment+"\t"+r.type+"\t"+r.modality+"\t"+r.name+"\t"+r.concept+"\t"+r.status+"\t"+r.location)].join("\n");
+  cp.onclick=()=>{ const tsv=["#\tWork segment\tType\tModality\tSuggested name\tConcept\tVideo file\tStatus\tLocation",...rows.map((r,i)=>(i+1)+"\t"+r.segment+"\t"+r.type+"\t"+r.modality+"\t"+r.name+"\t"+r.concept+"\t"+r.videoFile+"\t"+r.status+"\t"+r.location)].join("\n");
     const ok=()=>{cp.textContent="Copied ✓";setTimeout(()=>cp.textContent="Copy table",1400);};
     if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(tsv).then(ok).catch(()=>toast("Couldn't copy — use Download CSV.")); else toast("Couldn't copy — use Download CSV."); };
   foot.appendChild(cp); foot.appendChild(dl);

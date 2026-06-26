@@ -57,7 +57,7 @@ The edX export is a power-user feature, kept lightly hidden:
 
 The same `#olx` view exposes the **Library worksheet** (naming + tagging
 checklist). See the [Author Guide](AUTHOR_GUIDE.md#12-exporting-to-edx-olx) for the
-full walkthrough, including how assets (images, transcripts) are handled.
+full walkthrough, including how image assets are handled.
 
 ---
 
