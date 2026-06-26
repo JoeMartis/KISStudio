@@ -1009,6 +1009,7 @@ function validate(){
       } else if(["multiple_choice","checkboxes","dropdown"].includes(c.ptype)){
         const correct=c.options.filter(o=>o.correct).length;
         const blank=c.options.some(o=>!o.t.trim());
+        if(c.options.length<2) add("Choice problem needs at least two options");
         if(c.ptype==="checkboxes" && correct===0) add("Checkboxes: no answer marked correct");
         if(c.ptype!=="checkboxes" && correct!==1) add("Choice problem needs exactly one correct answer");
         if(blank) add("Problem has a blank option");
