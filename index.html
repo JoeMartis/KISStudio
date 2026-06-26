@@ -359,7 +359,7 @@ function seedState(){
         seqs:[ seq("Module Overview and Learning Goals",[ unit("Module Overview and Learning Goals",true,[comp("TEXT")]) ], true) ] },
       { name:"Lectures", kind:"lectures",
         seqs:[ lectureSeq(1) ] },
-      { name:"Recitations", kind:"recitations",
+      { name:"Recitations", kind:"recitations", optional:true,
         seqs:[ recitationSeq(1) ] },
       { name:"Assignments", kind:"assignments",
         seqs:[ assignmentSeq(1) ] },
@@ -428,7 +428,13 @@ function render(){
   dragCtx=null;                              // a rebuild invalidates any in-flight drag
   domId=0;
   chaptersEl.innerHTML="";
-  state.chapters.forEach(ch=>chaptersEl.appendChild(renderChapter(ch)));
+  state.chapters.forEach(ch=>{
+    chaptersEl.appendChild(renderChapter(ch));
+    // Recitations is optional; when it's been removed, offer to add it back in
+    // its natural slot (right after Lectures).
+    if(ch.kind==="lectures" && !state.chapters.some(c=>c.kind==="recitations"))
+      chaptersEl.appendChild(renderAddRecitations());
+  });
   renderPreview();
   renderOutline();
   window.scrollTo(0,sy);
@@ -533,12 +539,32 @@ const notFixed=t=>!t.fixed;
 
 function el(tag,cls,html){const e=document.createElement(tag);if(cls)e.className=cls;if(html!=null)e.innerHTML=html;return e}
 
+// Slim card shown in place of the Recitations section when it's been removed.
+function renderAddRecitations(){
+  const w=el('div','chapter chapter-add');
+  w.appendChild(el('p','chapter-hint','Recitations is optional and currently not included.'));
+  const b=el('button','btn-add','+ Add Recitations section');
+  b.onclick=()=>{
+    const rec={ name:"Recitations", kind:"recitations", optional:true, seqs:[ recitationSeq(1) ] };
+    const ai=state.chapters.findIndex(c=>c.kind==="assignments");   // sits just before Assignments
+    state.chapters.splice(ai<0?state.chapters.length:ai,0,rec);
+    render();
+  };
+  w.appendChild(b);
+  return w;
+}
 function renderChapter(ch){
   const wrap=el('div','chapter'); wrap.dataset.chapter=ch.kind;
   const head=el('div','chapter-head');
   head.innerHTML=`<span class="chapter-title">${ch.name}</span>
     <span class="chapter-kind">Chapter</span>
-    <span class="lock">${ch.fixed?"🔒 fixed":"＋ open for content"}</span>`;
+    <span class="lock">${ch.fixed?"🔒 fixed":(ch.optional?"optional":"＋ open for content")}</span>`;
+  if(ch.optional){
+    const del=el('button','btn-icon btn-danger','✕ remove section');
+    del.title="Remove the "+ch.name+" section";
+    del.onclick=()=>{ if(confirm("Remove the "+ch.name+" section? This deletes all of its content. You can add it back later.")){ state.chapters=state.chapters.filter(c=>c!==ch); render(); } };
+    head.appendChild(del);
+  }
   wrap.appendChild(head);
   const body=el('div','chapter-body');
 
@@ -1249,6 +1275,9 @@ function stateFromParsed(parsed){
     // for fixed chapters (intro/conclusion) keep the seq marked fixed
     if(ch.fixed) ch.seqs.forEach((s,si)=>{ s.fixed = (si===0); });
   });
+  // Recitations is optional: if the file doesn't include it, honor that (don't
+  // resurrect the canonical default). Other sections always stay.
+  blank.chapters=blank.chapters.filter(ch=>!(ch.optional && !byName[ch.name]));
   return blank;
 }
 

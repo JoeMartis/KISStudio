@@ -46,18 +46,21 @@ There are three outputs you can produce:
 
 ## 2. The module structure
 
-Every module has the **same fixed five sections** (chapters), in this order:
+Every module is built from the **same standard sections** (chapters), in this order:
 
 | Section          | What goes here                                            |
 |------------------|-----------------------------------------------------------|
 | **Introduction** | Module overview and learning goals                        |
 | **Lectures**     | The core teaching content, organized into lectures        |
-| **Recitations**  | Walkthroughs, tooling, worked sessions                    |
+| **Recitations**  | Walkthroughs, tooling, worked sessions — **optional**     |
 | **Assignments**  | Graded work (problems here count toward the grade)        |
 | **Conclusion**   | Wrap-up and next steps                                     |
 
-You can't rename, remove, or reorder these five sections — they're the backbone of
-every module. Inside them, the hierarchy is:
+You can't rename or reorder these sections — they're the backbone of every module.
+The only one you can remove is **Recitations**, since not every module needs it:
+click **✕ remove section** in its header to delete it, and a **+ Add Recitations
+section** button appears in its place if you want it back. (When removed, it's
+simply left out of the file and the export.) Inside the sections, the hierarchy is:
 
 ```
 Section (chapter)
@@ -477,9 +480,10 @@ Welcome to *AI and Finance*. …
 
 ### The rules
 
-- **Section headers** use the `====` banner with `CHAPTER: <name>`. The five names
+- **Section headers** use the `====` banner with `CHAPTER: <name>`. The names
   (Introduction, Lectures, Recitations, Assignments, Conclusion) are fixed — don't
-  change them.
+  change them. **Recitations** is optional and may simply be absent; the other four
+  should always be present.
 - **Subsections** use the `----` banner with `SEQUENTIAL: <title>`.
 - **Units** start with `>>> UNIT: <title>`.
 - **Components** start with `>>> COMPONENT: TEXT` / `VIDEO` / `PROBLEM`.
