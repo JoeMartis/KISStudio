@@ -1,22 +1,22 @@
-# KISStudio Production Guide — From Authoring to a Live Module
+# KISS Production Guide — From Authoring to a Live Module
 
 This guide is for the **production team**. It explains how to take the two things
-KISStudio produces and turn them into **Content Libraries** and a finished
+KISS produces and turn them into **Content Libraries** and a finished
 **module** in Open edX.
 
-> For *authoring* in KISStudio itself, see the **[Author Guide](AUTHOR_GUIDE.md)**.
+> For *authoring* in KISS itself, see the **[Author Guide](AUTHOR_GUIDE.md)**.
 > This guide picks up where that one ends — at the exported files.
 
 ---
 
 ## 1. The big picture
 
-KISStudio is the **planning + authoring** front end. It does **not** talk to your
+KISS (Keep It Simple Studio) is the **planning + authoring** front end. It does **not** talk to your
 platform (no API). Instead it hands production two artifacts, and you do the build
 in the Studio UI:
 
 ```
-   KISStudio  ──exports──▶  ┌─ OLX package (.tar.gz)   → the assembled module
+   KISS  ──exports──▶  ┌─ OLX package (.tar.gz)   → the assembled module
                             └─ Library worksheet (CSV) → the plan for the library
                                          │
                        (+ assets: images, video sources/OVS IDs, transcripts)
@@ -31,9 +31,9 @@ in the Studio UI:
                                    QA  →  Publish
 ```
 
-### The model (how KISStudio's fields map to your platform)
+### The model (how KISS's fields map to your platform)
 
-| KISStudio                              | Becomes in production                                  |
+| KISS                              | Becomes in production                                  |
 |----------------------------------------|--------------------------------------------------------|
 | **ORG**                                | One **Content Library** (per program/org)              |
 | **Display name** (module title)        | A **Collection** inside that library (this module)      |
@@ -79,7 +79,7 @@ lives, and (the empty columns) what to tag.
 
 Get these from the author before production begins:
 
-- [ ] **The module is "green" in KISStudio** — the issues panel shows *✓ No issues*.
+- [ ] **The module is "green" in KISS** — the issues panel shows *✓ No issues*.
 - [ ] **OLX package** exported (`#olx` → Export OLX).
 - [ ] **Library worksheet CSV** exported (`#olx` → Library worksheet → Download CSV).
 - [ ] **Images** — every file referenced with `[[image: …]]` in the content,
@@ -128,7 +128,7 @@ imported components."
      would search for.
    - **Fill in the content.** Fastest source is the OLX package: import it to a
      scratch/build course (§7) and copy each component's body across; or use
-     KISStudio's on-screen **preview** as the reference. (Problems and text come
+     KISS's on-screen **preview** as the reference. (Problems and text come
      across verbatim; videos are placeholders you finish in §6.)
    - **Tag the block**: **Work segment**, **Modality**, **Type**, **Status**,
      **Owning team**, **Clearance**, and any **LD tags** — straight from the
@@ -146,7 +146,7 @@ imported components."
 
 ## 6. Finish the media (videos, transcripts, images)
 
-KISStudio intentionally leaves video **sources** and **transcripts** out of the
+KISS intentionally leaves video **sources** and **transcripts** out of the
 export — they're attached here, in production:
 
 - **Video source** — for each video block, attach its OVS source. The worksheet's
@@ -174,7 +174,7 @@ library block so every module reusing it inherits the finished media.
    matches your policy.
 
 **Composed path — build from library blocks:**
-1. Recreate the structure: course **sections** = KISStudio sections (Introduction /
+1. Recreate the structure: course **sections** = KISS sections (Introduction /
    Lectures / Recitations / Assignments / Conclusion), then subsections and units,
    following the worksheet's **Location** column (`Section > Subsection > Unit`).
 2. Into each unit, add the library blocks **by reference** (so updates to a library
@@ -190,8 +190,8 @@ library block so every module reusing it inherits the finished media.
 
 Run this pass before publishing — the worksheet is your checklist:
 
-- [ ] **Structure** matches the KISStudio outline (sections, subsections, units in
-      order). Use KISStudio's **Outline** (with the type filters) as the reference.
+- [ ] **Structure** matches the KISS outline (sections, subsections, units in
+      order). Use KISS's **Outline** (with the type filters) as the reference.
 - [ ] **Every worksheet row** has a block, named correctly, tagged, **In library? = yes**.
 - [ ] **Problems** render and grade correctly — spot-check the **inline/table
       dropdowns** especially (each dropdown gradeable; correct answers right).
@@ -213,7 +213,7 @@ along each block is:
 - **In library?** — flips to *yes* when the block exists and is tagged.
 - **Notes** — anything production needs to flag (missing asset, rework, etc.).
 
-Re-export the worksheet from KISStudio any time the author changes the module; the
+Re-export the worksheet from KISS any time the author changes the module; the
 rows regenerate from the current content (your filled-in tag columns are your own
 copy, so keep your working CSV as you go).
 

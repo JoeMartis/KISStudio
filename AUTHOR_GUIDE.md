@@ -1,6 +1,6 @@
-# KISStudio — Author Guide
+# KISS — Author Guide
 
-This guide explains how to write a complete course module in **KISStudio** (Keep It Simple Studio)
+This guide explains how to write a complete course module in **KISS** (Keep It Simple Studio)
 and turn it into something you can import into edX Studio. It's written for
 content authors — no coding required.
 
@@ -26,7 +26,7 @@ content authors — no coding required.
 
 ## 1. How the tool works
 
-KISStudio is a single web page. You type your module into it, and it keeps
+KISS is a single web page. You type your module into it, and it keeps
 everything in the browser as you work. When you're done (or want to stop), you
 **export** your work to a plain-text `.txt` file. To continue later, you
 **import** that file.
