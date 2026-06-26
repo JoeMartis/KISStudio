@@ -1389,7 +1389,7 @@ document.querySelectorAll('[data-meta]').forEach(i=>i.oninput=()=>{state.meta[i.
 function bindMeta(){document.querySelectorAll('[data-meta]').forEach(i=>i.value=state.meta[i.dataset.meta]||"")}
 
 // Warn before leaving with unsaved (un-exported) changes.
-window.addEventListener('beforeunload',e=>{ if(dirty){ e.preventDefault(); e.returnValue=""; } });
+window.addEventListener('beforeunload',e=>{ if(dirty){ e.preventDefault(); e.returnValue="You have unsaved changes — export your .txt before leaving."; return e.returnValue; } });
 
 /* ---------- OLX export (hidden: add #olx to the URL) ------------------ */
 // Converts the current module into an edX course export tarball (.tar.gz)
