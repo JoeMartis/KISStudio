@@ -802,7 +802,17 @@ function renderDropdowns(c){
     hd.appendChild(el('span','dd-tag','[['+(di+1)+']]'));
     if(c.dropdowns.length>1){
       const del=el('button','btn-icon btn-danger','✕ remove'); del.setAttribute('aria-label','Remove dropdown '+(di+1));
-      del.onclick=()=>{c.dropdowns.splice(di,1);render()};
+      // Keep body [[n]] tokens aligned with array indices: drop the removed
+      // token and shift higher ones down, so the remaining dropdowns don't
+      // silently remap to the wrong options.
+      del.onclick=()=>{
+        c.dropdowns.splice(di,1);
+        const r=di+1;
+        c.question=(c.question||"")
+          .replace(new RegExp('\\[\\['+r+'\\]\\]','g'),'')
+          .replace(/\[\[(\d+)\]\]/g,(m,n)=>+n>r?'[['+(+n-1)+']]':m);
+        markDirty(); render();
+      };
       const ra=el('span','row-actions'); ra.appendChild(del); hd.appendChild(ra);
     }
     box.appendChild(hd);
@@ -984,7 +994,9 @@ function validate(){
       if(!(c.question||"").trim()) add("Problem has no question");
       if(c.ptype==="inline_dropdown"){
         const dds=c.dropdowns||[];
-        const tokens=new Set(((c.question||"").match(/\[\[(\d+)\]\]/g)||[]).map(m=>+m.replace(/\D/g,"")));
+        const tokenList=((c.question||"").match(/\[\[(\d+)\]\]/g)||[]).map(m=>+m.replace(/\D/g,""));
+        const tokens=new Set(tokenList);
+        const seen=new Set(); tokens.forEach(n=>{ if(tokenList.filter(x=>x===n).length>1 && !seen.has(n)){ seen.add(n); add("Token [["+n+"]] appears more than once — it will emit a separate dropdown at each spot"); } });
         if(!dds.length) add("Inline dropdowns: no dropdowns defined");
         dds.forEach((dd,i)=>{
           if(!tokens.has(i+1)) add("Dropdown "+(i+1)+" has no [["+(i+1)+"]] token in the body");
