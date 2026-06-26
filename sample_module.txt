@@ -5,11 +5,11 @@ MODULE AUTHORING TEMPLATE
 ================================================================================
 MODULE
 ================================================================================
-DISPLAY_NAME: AI and Finance
-COURSE_ID: UAI.FIN.1
-ORG: UAI_SOURCE
+DISPLAY_NAME: Foundations of Genetics
+COURSE_ID: BIO.GEN.1
+ORG: BIO_SOURCE
 RUN: 1T2026
-SHORT_DESCRIPTION: A hands-on introduction to how modern AI reshapes financial analysis and decision-making.
+SHORT_DESCRIPTION: A hands-on introduction to genes, the central dogma, and how traits are inherited.
 
 ================================================================================
 CHAPTER: Introduction
@@ -24,16 +24,16 @@ SEQUENTIAL: Module Overview and Learning Goals
 CONCEPT: Module overview
 QUALIFIER: 
 LIB_TYPE: 
-TITLE: Welcome to AI and Finance
+TITLE: Welcome to Foundations of Genetics
 BODY:
-Welcome to *AI and Finance*. This module shows how machine learning is reshaping _financial analysis_ and decision-making.
+Welcome to *Foundations of Genetics*. This module shows how *genes* encode proteins and how _traits_ pass from parents to offspring.
 
 By the end you will be able to:
-- explain where ML fits in a *financial workflow*
-- read a basic _model evaluation_ report
-- reason about the *risks* of automated decisions
+- explain how a *gene* is read into a _protein_
+- read a basic *Punnett square*
+- reason about *dominant* and _recessive_ inheritance
 
-New to the tools? Skim the [setup guide](https://example.edu/uai/setup) before Lecture 1.
+New to the topic? Skim the [genetics primer](https://example.edu/bio/primer) before Lecture 1.
 <<<
 
 ================================================================================
@@ -41,7 +41,7 @@ CHAPTER: Lectures
 ================================================================================
 
 --------------------------------------------------------------------------------
-SEQUENTIAL: Lecture 1: Foundations
+SEQUENTIAL: Lecture 1: From DNA to Protein
 --------------------------------------------------------------------------------
 
 >>> UNIT: Overview and Learning Objectives
@@ -51,109 +51,109 @@ QUALIFIER:
 LIB_TYPE: 
 TITLE: 
 BODY:
-In this lecture we set up the vocabulary: *features*, *labels*, *training*, and *inference*.
+In this lecture we set up the vocabulary: *gene*, *allele*, *transcription*, and *translation*.
 <<<
 
->>> UNIT: L1.1 What is a model?
+>>> UNIT: L1.1 What is a gene?
 >>> COMPONENT: TEXT
-CONCEPT: Features and labels
+CONCEPT: Genes and alleles
 QUALIFIER: 
 LIB_TYPE: 
 TITLE: Reading
 BODY:
-A *model* maps inputs (called _features_) to outputs (called _labels_). *Training* fits that mapping to historical data; _inference_ is using the trained model on new data.
+A *gene* is a stretch of _DNA_ that codes for a product — usually a *protein*. Different versions of the same gene are called _alleles_.
 
 Key terms:
-- *feature* — an input variable the model reads
-- *label* — the value the model predicts
-- *inference* — running the trained model on new inputs
+- *gene* — a DNA sequence that codes for a product
+- *allele* — one version of a gene
+- *protein* — the molecule a gene's instructions build
 <<<
 
 >>> COMPONENT: VIDEO
-CONCEPT: What is a model
+CONCEPT: What is a gene
 QUALIFIER: 
 LIB_TYPE: 
-TITLE: Models in 4 minutes
-VIDEO_FILE: models-in-4-minutes.mp4
+TITLE: Genes in 4 minutes
+VIDEO_FILE: what-is-a-gene.mp4
 
 >>> COMPONENT: PROBLEM
-CONCEPT: Feature vs label
+CONCEPT: Gene vs allele
 QUALIFIER: 
 LIB_TYPE: 
 TITLE: 
 PROBLEM_TYPE: multiple_choice
 QUESTION:
-Which best describes a *feature*?
+Which best describes an *allele*?
 <<<
 OPTIONS:
-- ( ) The value the model predicts
-- (x) An input variable the model uses
-- ( ) The model's accuracy
-- ( ) A type of neural network
+- ( ) A gene's position on a chromosome
+- (x) A different version of a gene
+- ( ) A type of protein
+- ( ) A single DNA base
 EXPLANATION:
-A _feature_ is an *input*; the value you predict is the *label*. See the [glossary](https://example.edu/uai/glossary) for more.
+An _allele_ is one *version* of a gene. See the [glossary](https://example.edu/bio/glossary) for more.
 <<<
-HINT: Think *inputs* vs. *outputs*.
+HINT: Think *versions* of the same gene.
 
->>> UNIT: L1.2 Evaluating a model
+>>> UNIT: L1.2 Transcription and translation
 >>> COMPONENT: TEXT
-CONCEPT: Model evaluation metrics
+CONCEPT: The central dogma
 QUALIFIER: 
 LIB_TYPE: Diagram
 TITLE: Reading
 BODY:
-*Accuracy* alone can mislead on _imbalanced_ data — *precision* and *recall* tell a fuller story.
+The *central dogma* describes how information flows: *DNA → RNA → protein*. _Transcription_ copies DNA into *mRNA*; _translation_ reads the mRNA to build a *protein*.
 
-[[image: confusion_matrix.png | A confusion matrix: TP, FP, FN, TN]]
+[[image: central_dogma.png | The central dogma: DNA is transcribed to mRNA, then translated to protein]]
 
-See the [metrics cheat-sheet](https://example.edu/uai/metrics) for the full definitions.
+See the [pathway diagram](https://example.edu/bio/central-dogma) for the full picture.
 <<<
 
 >>> COMPONENT: PROBLEM
-CONCEPT: Model evaluation metrics
+CONCEPT: DNA bases
 QUALIFIER: select all
 LIB_TYPE: 
 TITLE: 
 PROBLEM_TYPE: checkboxes
 QUESTION:
-Which are evaluation metrics? (select all)
+Which of these are nitrogenous bases found in DNA? (select all)
 <<<
 OPTIONS:
-- [x] Precision
-- [x] Recall
-- [ ] Learning rate
-- [x] F1 score
+- [x] Adenine
+- [x] Guanine
+- [ ] Uracil
+- [x] Thymine
 EXPLANATION:
-Learning rate is a training hyperparameter, not an evaluation metric.
+Uracil replaces thymine in *RNA*, not DNA — so it isn't a DNA base.
 <<<
 HINT: 
 
->>> UNIT: L1.3 Over- and underfitting
+>>> UNIT: L1.3 Mutations
 >>> COMPONENT: TEXT
-CONCEPT: Over- and underfitting
+CONCEPT: Mutations
 QUALIFIER: 
 LIB_TYPE: 
 TITLE: Reading
 BODY:
-A model can fail in two opposite ways: *underfitting* (too simple to capture the pattern) or *overfitting* (memorizing the training data and missing the general rule).
+A *mutation* is a change in the _DNA sequence_. Some mutations are silent; others change the protein — and sometimes the trait.
 <<<
 
 >>> COMPONENT: PROBLEM
-CONCEPT: Overfitting
+CONCEPT: Mutation
 QUALIFIER: 
 LIB_TYPE: 
 TITLE: 
 PROBLEM_TYPE: dropdown
 QUESTION:
-Which term describes a model that fits the training data too closely and generalizes poorly to new data?
+What is a heritable change in the DNA sequence called?
 <<<
 OPTIONS:
-- ( ) Underfitting
-- (x) Overfitting
-- ( ) Regularization
-- ( ) Normalization
+- ( ) Transcription
+- (x) Mutation
+- ( ) Translation
+- ( ) Replication
 EXPLANATION:
-*Overfitting*: low error on training data, high error on unseen data.
+A *mutation* alters the DNA sequence and can be passed to offspring.
 <<<
 HINT: 
 
@@ -164,11 +164,11 @@ QUALIFIER:
 LIB_TYPE: 
 TITLE: 
 BODY:
-You can now define *features*, *labels*, *training*, and *inference*.
+You can now define a *gene* and an *allele*, and name the steps from DNA to protein.
 <<<
 
 --------------------------------------------------------------------------------
-SEQUENTIAL: Lecture 2: Risk and Forecasting
+SEQUENTIAL: Lecture 2: Patterns of Inheritance
 --------------------------------------------------------------------------------
 
 >>> UNIT: Overview and Learning Objectives
@@ -178,125 +178,125 @@ QUALIFIER:
 LIB_TYPE: 
 TITLE: 
 BODY:
-We apply the foundations to a forecasting task and discuss model risk.
+We apply the DNA basics to how traits pass from parents to offspring.
 <<<
 
->>> UNIT: L2.1 Forecasting returns
+>>> UNIT: L2.1 Alleles and genotypes
 >>> COMPONENT: TEXT
-CONCEPT: Forecasting baselines
+CONCEPT: Genotype and phenotype
 QUALIFIER: 
 LIB_TYPE: 
 TITLE: Reading
 BODY:
-A _naive_ forecast predicts *tomorrow = today*. A good model must *beat that baseline* — otherwise it adds no value.
+An organism's *genotype* is its allele combination (e.g. _Aa_); its *phenotype* is the observable trait. A _dominant_ allele's trait shows even in a heterozygote; a _recessive_ allele's trait shows only when homozygous.
 <<<
 
 >>> COMPONENT: VIDEO
-CONCEPT: Why baselines matter
+CONCEPT: Mendelian inheritance
 QUALIFIER: 
 LIB_TYPE: 
-TITLE: Baselines matter
-VIDEO_FILE: baselines-matter.mp4
+TITLE: Mendel in 4 minutes
+VIDEO_FILE: mendel-in-4-minutes.mp4
 
 >>> COMPONENT: PROBLEM
-CONCEPT: Annual return
+CONCEPT: Monohybrid ratios
 QUALIFIER: 
 LIB_TYPE: 
 TITLE: 
 PROBLEM_TYPE: numerical
 QUESTION:
-If a portfolio grows from 100 to 112 in a year, what is the annual return (%)?
+In a cross between two heterozygotes (Aa × Aa), what percent of offspring are expected to show the *recessive* phenotype?
 <<<
-ANSWER: 12
+ANSWER: 25
 TOLERANCE: 0.5
 EXPLANATION:
-Return = (112-100)/100 = 12%.
+Aa × Aa → 1 AA : 2 Aa : 1 aa, so 1/4 = 25% are aa (recessive).
 <<<
 HINT: 
 
->>> UNIT: L2.2 Reading a forecast
+>>> UNIT: L2.2 Reading a Punnett square
 >>> COMPONENT: PROBLEM
-CONCEPT: Reading a forecast
+CONCEPT: Reading a Punnett square
 QUALIFIER: 
 LIB_TYPE: 
 TITLE: 
 PROBLEM_TYPE: inline_dropdown
 QUESTION:
-A forecast that always predicts last year's value is a [[1]] baseline.
+In a monohybrid cross written Aa × Aa, the uppercase allele A is [[1]].
 
-Classify each model by how it compares to that baseline:
+Classify each genotype by its zygosity:
 
-| Model | Verdict |
+| Genotype | Classification |
 | --- | --- |
-| Coin-flip predictor | [[2]] |
-| Tuned gradient model | [[3]] |
+| AA | [[2]] |
+| Aa | [[3]] |
 <<<
 DROPDOWN 1:
-- (x) naive
-- ( ) sophisticated
+- (x) dominant
+- ( ) recessive
 DROPDOWN 2:
-- ( ) beats baseline
-- (x) no better than baseline
+- (x) homozygous
+- ( ) heterozygous
 DROPDOWN 3:
-- (x) beats baseline
-- ( ) no better than baseline
+- (x) heterozygous
+- ( ) homozygous
 EXPLANATION:
-The naive baseline is the bar to beat: a coin flip won't, a tuned model should.
+Two of the same allele = *homozygous*; two different = *heterozygous*. An uppercase letter marks the *dominant* allele.
 <<<
-HINT: Compare each to *predicting last year again*.
+HINT: Same letters, or different?
 
->>> UNIT: L2.3 Bias, variance, and task types
+>>> UNIT: L2.3 Dominance and genotypes
 >>> COMPONENT: PROBLEM
-CONCEPT: Bias-variance tradeoff
+CONCEPT: Dominant vs recessive
 QUALIFIER: 
 LIB_TYPE: 
 TITLE: 
 PROBLEM_TYPE: inline_dropdown
 QUESTION:
-A model that is too simple tends to have high [[1]], while a model that is too complex tends to have high [[2]].
+An allele whose trait appears even in a heterozygote is [[1]], while one whose trait is hidden in a heterozygote is [[2]].
 <<<
 DROPDOWN 1:
-- (x) bias
-- ( ) variance
+- (x) dominant
+- ( ) recessive
 DROPDOWN 2:
-- (x) variance
-- ( ) bias
+- (x) recessive
+- ( ) dominant
 EXPLANATION:
-Too simple → underfit (high *bias*); too complex → overfit (high *variance*).
+A *dominant* allele shows its trait in Aa; a _recessive_ allele's trait appears only in aa.
 <<<
-HINT: Think underfit vs. overfit.
+HINT: Which one gets masked in a heterozygote?
 
 >>> COMPONENT: PROBLEM
-CONCEPT: Types of ML tasks
+CONCEPT: Classifying genotypes
 QUALIFIER: 
 LIB_TYPE: 
 TITLE: 
 PROBLEM_TYPE: inline_dropdown
 QUESTION:
-Classify each task by the kind of ML problem it is:
+For a trait where *B* is dominant, classify each genotype:
 
-| Task | Type |
+| Genotype | Type |
 | --- | --- |
-| Predict a house's sale price | [[1]] |
-| Flag an email as spam or not | [[2]] |
-| Group customers into segments | [[3]] |
+| BB | [[1]] |
+| Bb | [[2]] |
+| bb | [[3]] |
 <<<
 DROPDOWN 1:
-- (x) Regression
-- ( ) Classification
-- ( ) Clustering
+- (x) homozygous dominant
+- ( ) heterozygous
+- ( ) homozygous recessive
 DROPDOWN 2:
-- ( ) Regression
-- (x) Classification
-- ( ) Clustering
+- ( ) homozygous dominant
+- (x) heterozygous
+- ( ) homozygous recessive
 DROPDOWN 3:
-- ( ) Regression
-- ( ) Classification
-- (x) Clustering
+- ( ) homozygous dominant
+- ( ) heterozygous
+- (x) homozygous recessive
 EXPLANATION:
-Continuous number → *regression*; discrete label → *classification*; no labels, find groups → *clustering*.
+Two capitals → *homozygous dominant*; one of each → *heterozygous*; two lowercase → *homozygous recessive*.
 <<<
-HINT: What's the output — a number, a label, or a grouping?
+HINT: Count the capital letters.
 
 >>> UNIT: Summary
 >>> COMPONENT: TEXT
@@ -305,7 +305,7 @@ QUALIFIER:
 LIB_TYPE: 
 TITLE: 
 BODY:
-You can frame a forecast, set a baseline, and compute simple returns.
+You can frame a cross, tell genotype from phenotype, and compute simple offspring ratios.
 <<<
 
 ================================================================================
@@ -313,7 +313,7 @@ CHAPTER: Recitations
 ================================================================================
 
 --------------------------------------------------------------------------------
-SEQUENTIAL: Recitation 1: Tooling
+SEQUENTIAL: Recitation 1: Lab Skills
 --------------------------------------------------------------------------------
 
 >>> UNIT: Recitation Overview
@@ -323,23 +323,23 @@ QUALIFIER:
 LIB_TYPE: 
 TITLE: 
 BODY:
-A walkthrough of the notebook environment used in assignments.
+A walkthrough of the lab tools used in the assignments.
 <<<
 
->>> UNIT: R1.1 Setting up the notebook
+>>> UNIT: R1.1 Using a microscope
 >>> COMPONENT: VIDEO
-CONCEPT: Notebook setup
+CONCEPT: Microscope basics
 QUALIFIER: 
 LIB_TYPE: 
-TITLE: Notebook setup
-VIDEO_FILE: notebook-setup.mp4
+TITLE: Using a microscope
+VIDEO_FILE: using-a-microscope.mp4
 
->>> UNIT: R1.2 Loading market data
+>>> UNIT: R1.2 Reading a pedigree
 >>> COMPONENT: VIDEO
-CONCEPT: Loading market data
+CONCEPT: Pedigree analysis
 QUALIFIER: 
 LIB_TYPE: 
-TITLE: Loading data
+TITLE: Reading a pedigree
 VIDEO_FILE: 
 
 >>> UNIT: Recitation Summary
@@ -349,7 +349,7 @@ QUALIFIER:
 LIB_TYPE: 
 TITLE: 
 BODY:
-You can open the notebook and load a price series.
+You can focus a microscope and trace a trait through a pedigree.
 <<<
 
 ================================================================================
@@ -357,7 +357,7 @@ CHAPTER: Assignments
 ================================================================================
 
 --------------------------------------------------------------------------------
-SEQUENTIAL: Assignment 1: First Forecast
+SEQUENTIAL: Assignment 1: Cross Analysis
 --------------------------------------------------------------------------------
 
 >>> UNIT: Assignment Overview
@@ -367,37 +367,37 @@ QUALIFIER:
 LIB_TYPE: 
 TITLE: 
 BODY:
-Build and evaluate a baseline forecaster. Submit your notebook and answers below.
+Predict the outcome of a genetic cross and explain your reasoning. Submit your answers below.
 <<<
 
 >>> UNIT: Assignment 1: Part 1
 >>> COMPONENT: PROBLEM
-CONCEPT: Baseline RMSE
+CONCEPT: Test-cross ratios
 QUALIFIER: 
 LIB_TYPE: 
 TITLE: 
 PROBLEM_TYPE: numerical
 QUESTION:
-What RMSE did your baseline achieve (2 decimals)?
+In a cross Aa × aa, what percent of offspring are expected to be heterozygous (Aa)?
 <<<
-ANSWER: 0.00
-TOLERANCE: 100
+ANSWER: 50
+TOLERANCE: 0.5
 EXPLANATION:
-Any honest value is accepted; this checks you ran it.
+Aa × aa → 1 Aa : 1 aa, so 50% are Aa.
 <<<
 HINT: 
 
 >>> UNIT: Assignment 1: Part 2
 >>> COMPONENT: PROBLEM
-CONCEPT: Beating the baseline
+CONCEPT: Carriers and recessive traits
 QUALIFIER: 
 LIB_TYPE: 
 TITLE: 
 PROBLEM_TYPE: text_input
 QUESTION:
-In one sentence, why must a model beat the naive baseline?
+In one sentence, explain why a recessive trait can skip a generation.
 <<<
-ANSWER: Because the baseline is free, so a model only adds value if it does better.
+ANSWER: Because heterozygous carriers show the dominant trait but can still pass the recessive allele to their offspring.
 EXPLANATION:
 We grade for the idea, not exact wording.
 <<<
@@ -410,7 +410,7 @@ QUALIFIER:
 LIB_TYPE: 
 TITLE: 
 BODY:
-Submit your notebook and your two answers above. Grading is based on a working baseline and clear reasoning.
+Submit your two answers above. Grading is based on correct ratios and clear reasoning.
 <<<
 
 ================================================================================
@@ -428,9 +428,9 @@ QUALIFIER:
 LIB_TYPE: 
 TITLE: Module Summary
 BODY:
-You covered *foundations*, *evaluation*, *forecasting*, and _model risk_.
+You covered *genes and alleles*, the *central dogma*, *mutations*, and _patterns of inheritance_.
 
-Next up: [portfolio construction](https://example.edu/uai/next).
+Next up: [dihybrid crosses](https://example.edu/bio/next).
 <<<
 
 >>> UNIT: Thank You
