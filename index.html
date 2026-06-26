@@ -1398,7 +1398,10 @@ function mdToHtml(body){
   const lines=(body||"").split("\n"); const out=[]; let list=null,para=[];
   const closeList=()=>{ if(list){out.push('</'+list+'>');list=null;} };
   const flushPara=()=>{ if(para.length){out.push('<p>'+para.map(mdInline).join('<br/>')+'</p>');para=[];} };
-  const cells=row=>row.trim().replace(/^\|/,'').replace(/\|$/,'').split('|').map(x=>x.trim());
+  // Split a table row into cells. Pipes are the delimiter, so a literal pipe
+  // inside a cell (e.g. P(A|B)) must be backslash-escaped as \| — GFM-standard.
+  // A sentinel stand-in avoids regex lookbehind (unsupported on older Safari).
+  const cells=row=>{const S=String.fromCharCode(0xE000);return row.trim().replace(/^\|/,"").replace(/\|$/,"").replace(/\\\|/g,S).split("|").map(x=>x.trim().split(S).join("|"));};
   const isSep=l=>/^\s*\|?(\s*:?-{2,}:?\s*\|)+\s*:?-{2,}:?\s*\|?\s*$/.test(l) || /^\s*\|(\s*:?-{2,}:?\s*\|)+\s*$/.test(l);
   for(let i=0;i<lines.length;i++){
     const ln=lines[i], t=ln.trim();
