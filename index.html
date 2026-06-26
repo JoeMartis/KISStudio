@@ -298,15 +298,15 @@
         <div class="meta-grid">
           <div class="field full">
             <label class="lbl" for="m_display">Module display name</label>
-            <input id="m_display" data-meta="DISPLAY_NAME" placeholder="AI and Finance">
+            <input id="m_display" data-meta="DISPLAY_NAME" placeholder="Foundations of Genetics">
           </div>
           <div class="field">
             <label class="lbl" for="m_course">Course ID</label>
-            <input id="m_course" class="mono-input" data-meta="COURSE_ID" placeholder="UL.FIN.1">
+            <input id="m_course" class="mono-input" data-meta="COURSE_ID" placeholder="BIO.GEN.1">
           </div>
           <div class="field">
             <label class="lbl" for="m_org">Org</label>
-            <input id="m_org" class="mono-input" data-meta="ORG" placeholder="UL_SOURCE">
+            <input id="m_org" class="mono-input" data-meta="ORG" placeholder="BIO_SOURCE">
           </div>
           <div class="field">
             <label class="lbl" for="m_run">Run</label>
@@ -746,8 +746,8 @@ function renderComp(c,u,ch){
   // Library name is concept-first: "<Concept> — <Type> [qualifier]". The concept
   // is the searchable term a builder would type; the type is derived from the kind.
   const crow=el('div','comp-row');
-  crow.appendChild(fieldText("Concept (library name)",c.concept||"",v=>c.concept=v,false,"e.g. Backpropagation — the word a builder would search"));
-  crow.appendChild(fieldText("Qualifier (optional)",c.qualifier||"",v=>c.qualifier=v,false,"e.g. chain rule step"));
+  crow.appendChild(fieldText("Concept (library name)",c.concept||"",v=>c.concept=v,false,"e.g. Dominant vs recessive — the word a builder would search"));
+  crow.appendChild(fieldText("Qualifier (optional)",c.qualifier||"",v=>c.qualifier=v,false,"e.g. select all"));
   body.appendChild(crow);
   // Type (library convention) — defaults to the derived value; author can override.
   const tf=el('div','field');
