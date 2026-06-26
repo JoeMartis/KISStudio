@@ -352,7 +352,11 @@ A clean module shows **"✓ No issues — ready to download."**
   handle**, or by focusing it and pressing **↑ / ↓**. Fixed scaffold items
   (Overviews, Summaries, the five sections) stay put.
 - **Outline** — a clickable table of contents. It updates live as you add and
-  reorder things, and includes videos and problems, so you can jump anywhere.
+  reorder things, and includes videos and problems, so you can jump anywhere. The
+  **filter chips** at the top (**All · Text · Video · Problems**) narrow the outline
+  to one component type — handy for sweeping all the problems or checking every
+  video as a module grows. Filtering only changes what the outline shows; it never
+  touches your content.
 - **Preview** — a readable rendering of your module. It's hidden until you reveal
   it (to keep the workspace focused) and updates as you type.
 - **Light / dark mode** — toggle with the theme button; your choice is remembered.

@@ -109,6 +109,11 @@
   .ol-unit{color:var(--ink-soft);font-size:12px;padding:2px 8px 2px 30px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .ol-comp{color:var(--ink-soft);font-size:11.5px;padding:1px 8px 1px 42px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:.92}
   #outline button:hover{background:var(--blue-soft);color:var(--ink)}
+  #outline .ol-filters{display:flex;gap:4px;flex-wrap:wrap;padding:2px 2px 8px;position:sticky;top:0;background:var(--card);z-index:1;border-bottom:1px solid var(--line-soft);margin-bottom:4px}
+  #outline .ol-chip{display:inline-block;width:auto;font-size:11px;padding:3px 9px;border:1px solid var(--line);border-radius:999px;color:var(--ink-soft);background:var(--card)}
+  #outline .ol-chip:hover{background:var(--blue-soft);color:var(--ink)}
+  #outline .ol-chip.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+  #outline .ol-empty{color:var(--ink-soft);font-size:11.5px;padding:8px;font-style:italic}
   .flash{animation:flashbg 1.3s ease}
   @keyframes flashbg{0%,30%{background:var(--accent-soft)}100%{background:transparent}}
 
@@ -443,19 +448,38 @@ function render(){
 }
 
 /* ---------- Linked outline ------------------------------------------- */
+let outlineFilter="all";   // "all" | "TEXT" | "VIDEO" | "PROBLEM"
+const OUTLINE_FILTERS=[["all","All"],["TEXT","Text"],["VIDEO","Video"],["PROBLEM","Problems"]];
 function renderOutline(){
   const nav=document.getElementById('outline'); if(!nav)return;
   nav.innerHTML="";
+  // filter chips — narrow the outline to one component type (navigation only)
+  const chips=el('div','ol-filters');
+  OUTLINE_FILTERS.forEach(([val,label])=>{
+    const b=el('button','ol-chip'+(outlineFilter===val?' on':''),label);
+    b.type="button"; b.setAttribute('aria-pressed',outlineFilter===val?'true':'false');
+    b.onclick=()=>{ outlineFilter=val; renderOutline(); };
+    chips.appendChild(b);
+  });
+  nav.appendChild(chips);
+  const filtering = outlineFilter!=="all";
+  const hit = c => !filtering || c.kind===outlineFilter;
+  let shown=0;
   state.chapters.forEach(ch=>{
+    if(filtering && !ch.seqs.some(s=>s.units.some(u=>u.comps.some(hit)))) return;  // skip empty branches
     nav.appendChild(olBtn('ol-ch',ch.name,'[data-chapter="'+ch.kind+'"]'));
     ch.seqs.forEach(s=>{
+      if(filtering && !s.units.some(u=>u.comps.some(hit))) return;
       nav.appendChild(olBtn('ol-seq',s.title||'(untitled subsection)','[data-seq="'+s.id+'"]'));
       s.units.forEach(u=>{
+        const comps=u.comps.filter(hit);
+        if(filtering && !comps.length) return;
         nav.appendChild(olBtn('ol-unit',u.title||'(untitled unit)','[data-unit="'+u.id+'"]'));
-        u.comps.forEach(c=>nav.appendChild(olBtn('ol-comp',componentName(c,u,ch),'[data-comp="'+c.id+'"]')));
+        comps.forEach(c=>{ nav.appendChild(olBtn('ol-comp',componentName(c,u,ch),'[data-comp="'+c.id+'"]')); shown++; });
       });
     });
   });
+  if(filtering && !shown) nav.appendChild(el('div','ol-empty','No '+OUTLINE_FILTERS.find(f=>f[0]===outlineFilter)[1].toLowerCase()+' components in this module.'));
 }
 function olBtn(cls,label,sel){
   const b=document.createElement('button'); b.type="button"; b.className=cls;
