@@ -1,6 +1,6 @@
-# UL Module Builder
+# KISStudio
 
-A single-file web app for authoring structured course modules and exporting them
+**Keep It Simple Studio** — a single-file web app for authoring structured course modules and exporting them
 to **Open edX / edX Studio** (OLX) — no build step, no server, no install. Open
 `index.html` in a browser and start writing.
 
