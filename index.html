@@ -1612,7 +1612,9 @@ function buildChecklist(st){
 }
 function checklistCsv(st){
   const {rows}=buildChecklist(st);
-  const cell=v=>{v=v==null?"":(""+v); return /[",\n\r]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;};
+  const cell=v=>{v=v==null?"":(""+v);
+    if(/^[=+\-@\t\r]/.test(v)) v="'"+v;          // neutralize spreadsheet formula injection (Excel/Sheets hide the leading ')
+    return /[",\n\r]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;};
   const head=["Library (program/org)","Collection (module)","Work segment","Type","Modality","Suggested name","Concept","Status","Owning team","Clearance","LD tags","Location","In library?","Notes"];
   const lines=[head.join(",")];
   rows.forEach(r=>lines.push([r.library,r.collection,r.segment,r.type,r.modality,r.name,r.concept,r.status,"","","",r.location,"",""].map(cell).join(",")));
